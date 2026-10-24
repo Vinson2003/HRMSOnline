@@ -1,4 +1,5 @@
 <Solution>
   <Project Path="../HRMS.Data/HRMS.Data.csproj" />
+  <Project Path="../HRMS.Service/HRMS.Service.csproj" Id="4224162b-0887-4091-ab5a-6e60633e4646" />
   <Project Path="HRMS.csproj" />
 </Solution>
