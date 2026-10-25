@@ -30,9 +30,13 @@ public partial class HRMSContext : DbContext
 
             entity.ToTable("Mst_Department");
 
+            entity.Property(e => e.Created).HasColumnType("datetime");
+            entity.Property(e => e.CreatedBy).HasMaxLength(100);
             entity.Property(e => e.DepartmentName)
                 .HasMaxLength(100)
                 .IsUnicode(false);
+            entity.Property(e => e.Updated).HasColumnType("datetime");
+            entity.Property(e => e.UpdatedBy).HasMaxLength(100);
         });
 
         modelBuilder.Entity<MstEmployee>(entity =>
@@ -44,6 +48,8 @@ public partial class HRMSContext : DbContext
             entity.HasIndex(e => e.EmployeeNumber, "UQ__Mst_Empl__8D6635982D11A7C4").IsUnique();
 
             entity.Property(e => e.AnnualLeaveBalance).HasDefaultValue(12);
+            entity.Property(e => e.Created).HasColumnType("datetime");
+            entity.Property(e => e.CreatedBy).HasMaxLength(100);
             entity.Property(e => e.Email)
                 .HasMaxLength(150)
                 .IsUnicode(false);
@@ -53,6 +59,8 @@ public partial class HRMSContext : DbContext
             entity.Property(e => e.FullName)
                 .HasMaxLength(150)
                 .IsUnicode(false);
+            entity.Property(e => e.Updated).HasColumnType("datetime");
+            entity.Property(e => e.UpdatedBy).HasMaxLength(100);
 
             entity.HasOne(d => d.Department).WithMany(p => p.MstEmployees)
                 .HasForeignKey(d => d.DepartmentId)
@@ -87,9 +95,13 @@ public partial class HRMSContext : DbContext
             entity.Property(e => e.ActionStatus)
                 .HasMaxLength(20)
                 .IsUnicode(false);
+            entity.Property(e => e.Created).HasColumnType("datetime");
+            entity.Property(e => e.CreatedBy).HasMaxLength(100);
             entity.Property(e => e.Remarks)
                 .HasMaxLength(255)
                 .IsUnicode(false);
+            entity.Property(e => e.Updated).HasColumnType("datetime");
+            entity.Property(e => e.UpdatedBy).HasMaxLength(100);
 
             entity.HasOne(d => d.Approver).WithMany(p => p.TrxLeaveApprovals)
                 .HasForeignKey(d => d.ApproverId)
@@ -111,6 +123,8 @@ public partial class HRMSContext : DbContext
             entity.Property(e => e.AttachmentPath)
                 .HasMaxLength(255)
                 .IsUnicode(false);
+            entity.Property(e => e.Created).HasColumnType("datetime");
+            entity.Property(e => e.CreatedBy).HasMaxLength(100);
             entity.Property(e => e.Reason)
                 .HasMaxLength(500)
                 .IsUnicode(false);
@@ -121,6 +135,8 @@ public partial class HRMSContext : DbContext
                 .HasMaxLength(20)
                 .IsUnicode(false)
                 .HasDefaultValue("Pending");
+            entity.Property(e => e.Updated).HasColumnType("datetime");
+            entity.Property(e => e.UpdatedBy).HasMaxLength(100);
 
             entity.HasOne(d => d.Employee).WithMany(p => p.TrxLeaveRequests)
                 .HasForeignKey(d => d.EmployeeId)

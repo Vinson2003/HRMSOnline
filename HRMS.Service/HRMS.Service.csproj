@@ -12,6 +12,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\HRMS.Data\HRMS.Data.csproj" />
+    <ProjectReference Include="..\HRMS.LIB\HRMS.Lib.csproj" />
   </ItemGroup>
 
 </Project>

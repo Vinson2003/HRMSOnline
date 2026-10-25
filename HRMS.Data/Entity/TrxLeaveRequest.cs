@@ -27,6 +27,14 @@ public partial class TrxLeaveRequest
 
     public bool IsDeleted { get; set; }
 
+    public DateTime? Created { get; set; }
+
+    public string? CreatedBy { get; set; }
+
+    public DateTime? Updated { get; set; }
+
+    public string? UpdatedBy { get; set; }
+
     public virtual MstEmployee Employee { get; set; } = null!;
 
     public virtual MstLeaveType LeaveType { get; set; } = null!;
