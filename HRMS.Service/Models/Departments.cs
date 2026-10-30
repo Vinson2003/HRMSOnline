@@ -10,7 +10,7 @@ namespace HRMS.Service.Models
 
         public string? DepartmentName { get; set; }
 
-        public DateTime Created { get; set; }
+        public DateTime? Created { get; set; }
         
         public string? CreatedBy { get; set; }
     }
