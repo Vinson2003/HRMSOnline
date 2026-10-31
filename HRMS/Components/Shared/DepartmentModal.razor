@@ -1,0 +1,97 @@
+﻿@using HRMS.Service.Base
+@using HRMS.Service.Interface
+@using HRMS.Service.Models
+@inject IDepartmentService DepartmentService
+
+@if (IsVisible)
+{
+    <!-- CRUCIAL: Backdrop div creates the dark background overlay behind the Bootstrap modal -->
+    <div class="modal-backdrop fade show"></div>
+}
+
+<div class="modal fade @(IsVisible ? "show d-block" : "")" tabindex="1" role="dialog">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">@modalTitle</h5>
+                <button type="button" class="btn-close" @onclick="CloseModal"></button>
+            </div>
+            <div class="modal-body">
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <div class="alert alert-danger mb-3">@errorMessage</div>
+                }
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Department Name</label>
+                    <input type="text" class="form-control" @bind="departmentName" placeholder="Enter department name..." />
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" @onclick="CloseModal">Cancel</button>
+                <button type="button" class="btn btn-primary" @onclick="SubmitForm">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public EventCallback OnSaveSuccess { get; set; }
+
+    private bool IsVisible = false;
+    private string errorMessage = string.Empty;
+    private string modalTitle = "Add Department";
+
+    // State properties for the form
+    private int currentId = 0;
+    private string departmentName = string.Empty;
+
+    // CRUCIAL: Modified Show method to accept optional parameters.
+    // If id is 0, it acts as Create. If id > 0, it acts as Edit.
+    public void Show(int id = 0, string name = "")
+    {
+        currentId = id;
+        departmentName = name;
+        modalTitle = id == 0 ? "Add Department" : "Edit Department";
+        errorMessage = string.Empty;
+        IsVisible = true;
+        StateHasChanged();
+    }
+
+    public void CloseModal()
+    {
+        IsVisible = false;
+        StateHasChanged();
+    }
+
+    private void SubmitForm()
+    {
+        if (string.IsNullOrWhiteSpace(departmentName))
+        {
+            errorMessage = "Department Name cannot be empty.";
+            return;
+        }
+
+        BaseResponse<bool> response;
+
+        // CRUCIAL: Route to the correct service method based on currentId
+        if (currentId == 0)
+        {
+            response = DepartmentService.CreateDepartment(new CreateDepartment { DepartmentName = departmentName });
+        }
+        else
+        {
+            response = DepartmentService.UpdateDepartment(new UpdateDepartment { Id = currentId, DepartmentName = departmentName });
+        }
+
+        if (response.Result)
+        {
+            IsVisible = false;
+            OnSaveSuccess.InvokeAsync();
+        }
+        else
+        {
+            errorMessage = response.Message ?? "Failed to save department.";
+        }
+    }
+}

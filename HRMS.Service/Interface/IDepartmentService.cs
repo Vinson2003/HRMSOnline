@@ -9,5 +9,9 @@ namespace HRMS.Service.Interface
         BaseResponse<List<DepartmentList>> GetAllDepartments(BasePaging paging, string searchName);
 
         BaseResponse<bool> CreateDepartment(CreateDepartment request);
+
+        BaseResponse<bool> UpdateDepartment(UpdateDepartment request);
+
+        BaseResponse<bool> DeleteDepartment(int Id);
     }
 }

@@ -19,4 +19,10 @@ namespace HRMS.Service.Models
     {
         public string DepartmentName { get; set; } = string.Empty;
     }
+
+    public class UpdateDepartment
+    {
+        public int Id { get; set; }
+        public string DepartmentName { get; set; } = string.Empty;
+    }
 }
