@@ -6,12 +6,12 @@ namespace HRMS.Service.Interface
 {
     public interface IDepartmentService
     {
-        BaseResponse<List<DepartmentList>> GetAllDepartments(BasePaging paging, string searchName);
+        Task<BaseResponse<List<DepartmentList>>> GetAllDepartmentsAsync(BasePaging paging, string searchName);
 
-        BaseResponse<bool> CreateDepartment(CreateDepartment request);
+        Task<BaseResponse<bool>> CreateDepartmentAsync(CreateDepartment request);
 
-        BaseResponse<bool> UpdateDepartment(UpdateDepartment request);
+        Task<BaseResponse<bool>> UpdateDepartmentAsync(UpdateDepartment request);
 
-        BaseResponse<bool> DeleteDepartment(int Id);
+        Task<BaseResponse<bool>> DeleteDepartmentAsync(int Id);
     }
 }

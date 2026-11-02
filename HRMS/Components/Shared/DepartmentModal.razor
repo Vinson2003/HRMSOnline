@@ -1,16 +1,15 @@
-﻿@using HRMS.Service.Base
-@using HRMS.Service.Interface
+﻿@using HRMS.Service.Interface
 @using HRMS.Service.Models
 @inject IDepartmentService DepartmentService
 
 @if (IsVisible)
 {
-    <!-- CRUCIAL: Backdrop div creates the dark background overlay behind the Bootstrap modal -->
+    <!-- Backdrop div creates the dark background overlay behind the Bootstrap modal -->
     <div class="modal-backdrop fade show"></div>
 }
 
-<div class="modal fade @(IsVisible ? "show d-block" : "")" tabindex="1" role="dialog">
-    <div class="modal-dialog modal-dialog-centered" role="document">
+<div class="modal fade @(IsVisible ? "show d-block" : "")" tabindex="1" role="dialog" data-bs-backdrop="static">
+    <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">@modalTitle</h5>
@@ -28,7 +27,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" @onclick="CloseModal">Cancel</button>
-                <button type="button" class="btn btn-primary" @onclick="SubmitForm">Save</button>
+                <button type="button" class="btn btn-primary" @onclick="SubmitFormAsync">Save</button>
             </div>
         </div>
     </div>
@@ -46,7 +45,7 @@
     private int currentId = 0;
     private string departmentName = string.Empty;
 
-    // CRUCIAL: Modified Show method to accept optional parameters.
+    // Modified Show method to accept optional parameters.
     // If id is 0, it acts as Create. If id > 0, it acts as Edit.
     public void Show(int id = 0, string name = "")
     {
@@ -64,34 +63,33 @@
         StateHasChanged();
     }
 
-    private void SubmitForm()
+    private async Task SubmitFormAsync()
     {
         if (string.IsNullOrWhiteSpace(departmentName))
         {
-            errorMessage = "Department Name cannot be empty.";
+            errorMessage = "Department name cannot be empty.";
             return;
         }
 
-        BaseResponse<bool> response;
+        var request = new CreateDepartment
+        {
+            DepartmentName = departmentName
+        };
 
-        // CRUCIAL: Route to the correct service method based on currentId
-        if (currentId == 0)
-        {
-            response = DepartmentService.CreateDepartment(new CreateDepartment { DepartmentName = departmentName });
-        }
-        else
-        {
-            response = DepartmentService.UpdateDepartment(new UpdateDepartment { Id = currentId, DepartmentName = departmentName });
-        }
+        var response = currentId == 0 ? await DepartmentService.CreateDepartmentAsync(request)
+            : await DepartmentService.UpdateDepartmentAsync(new UpdateDepartment
+            {
+                Id = currentId,
+                DepartmentName = departmentName
+            });
 
-        if (response.Result)
-        {
-            IsVisible = false;
-            OnSaveSuccess.InvokeAsync();
-        }
-        else
+        if (!response.Result)
         {
             errorMessage = response.Message ?? "Failed to save department.";
+            return;
         }
+
+        IsVisible = false;
+        await OnSaveSuccess.InvokeAsync();
     }
 }

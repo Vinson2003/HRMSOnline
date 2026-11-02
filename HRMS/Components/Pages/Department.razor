@@ -18,12 +18,12 @@
         <!-- Kotak Pencarian di sebelah kiri -->
         <div class="w-25">
             <input type="text" class="form-control" placeholder="Search Department..."
-                   @bind="searchName" @bind:event="oninput" @onkeyup="LoadData" />
+                @bind="searchName" @bind:event="oninput" @onkeyup="LoadDataAsync" />
         </div>
 
-        <!-- CRUCIAL: Clicking this button invokes the Show() method of the child modal -->
+        <!-- Clicking this button invokes the Show() method of the child modal -->
         <div>
-            <button class="btn btn-primary" @onclick="OpenAddModal">Add department</button>
+            <button class="btn btn-primary" @onclick="OpenAddModal">Add Department</button>
         </div>
     </div>
 
@@ -36,10 +36,10 @@
             </tr>
         </thead>
         <tbody>
-            @* CRUCIAL: Always check for null or empty collections before iterating to prevent NullReferenceException rendering errors. *@
+            @* Always check for null or empty collections before iterating to prevent NullReferenceException rendering errors. *@
             @if (departmentList != null && departmentList.Any())
             {
-                @* CRUCIAL: The @foreach loop dynamically generates HTML rows based on the C# collection. *@
+                @* The @foreach loop dynamically generates HTML rows based on the C# collection. *@
                 @foreach (var dept in departmentList)
                 {
                     <tr>
@@ -47,7 +47,7 @@
                         <td>@dept.DepartmentName</td>
                         <td class="text-center">
                             <button class="btn btn-sm btn-warning me-2" @onclick="() => OpenEditModal(dept.Id, dept.DepartmentName)">Edit</button>
-                            <button class="btn btn-sm btn-danger" @onclick="() => DeleteDepartment(dept.Id, dept.DepartmentName)">Delete</button>
+                            <button class="btn btn-sm btn-danger" @onclick="() => DeleteDepartmentAsync(dept.Id, dept.DepartmentName)">Delete</button>
                         </td>
                     </tr>
                 }
@@ -60,7 +60,7 @@
             }
         </tbody>
     </table>
-    <!-- Navigasi Paginasi Bootstrap -->
+    <!-- Navigasi Pagination Bootstrap -->
     <div class="d-flex justify-content-between align-items-center mt-3">
         <div>
             Menampilkan data @(TotalData == 0 ? 0 : paging.Start + 1) hingga @Math.Min(paging.Start + paging.Length, TotalData) dari total @TotalData departemen.
@@ -68,73 +68,57 @@
         <nav>
             <ul class="pagination mb-0">
                 <li class="page-item @(CurrentPage == 1 ? "disabled" : "")">
-                    <button class="page-link" @onclick="PreviousPage">Previous</button>
+                    <button class="page-link" @onclick="PreviousPageAsync">Previous</button>
                 </li>
 
                 @for (int i = 1; i <= TotalPages; i++)
                 {
                     int pageNumber = i;
                     <li class="page-item @(CurrentPage == pageNumber ? "active" : "")">
-                        <button class="page-link" @onclick="() => GoToPage(pageNumber)">@pageNumber</button>
+                        <button class="page-link" @onclick="() => GoToPageAsync(pageNumber)">@pageNumber</button>
                     </li>
                 }
 
                 <li class="page-item @(CurrentPage >= TotalPages ? "disabled" : "")">
-                    <button class="page-link" @onclick="NextPage">Next</button>
+                    <button class="page-link" @onclick="NextPageAsync">Next</button>
                 </li>
             </ul>
         </nav>
     </div>
 </div>
 
-<DepartmentModal @ref="modalRef" OnSaveSuccess="LoadData" />
+<DepartmentModal @ref="modalRef" OnSaveSuccess="LoadDataAsync" />
 
 @code {
-    #region 1. Component References
-    // CRUCIAL: @ref binds this variable directly to the child modal component instance
+    // @ref binds this variable directly to the child modal component instance
     private DepartmentModal modalRef = null!;
-    #endregion
 
-    #region 2. State & Properties
     private List<DepartmentList> departmentList = new();
     private string searchName = string.Empty;
     private BasePaging paging = new BasePaging { Start = 0, Length = 10, Column = "Id", SortBy = Const.PAGING_SORT_ASC };
 
-    // Variabel state untuk melacak total data dari database
     private int TotalData = 0;
-    #endregion
 
-    #region 3. Computed Properties (Pagination)
-    // CRUCIAL: Calculate TotalPages dynamically based on TotalData and page Length
+    // Calculate TotalPages dynamically based on TotalData and page Length
     private int TotalPages => (int)Math.Ceiling((double)TotalData / paging.Length);
 
-    // CRUCIAL: Calculate current active page index (1-based)
+    // Calculate current active page index (1-based)
     private int CurrentPage => (paging.Start / paging.Length) + 1;
-    #endregion
 
-    #region 4. Lifecycle Methods
-    // CRUCIAL: Blazor lifecycle method. OnInitialized is called when the component is first created and ready to fetch data.
-    protected override void OnInitialized()
+    // Blazor lifecycle method. OnInitialized is called when the component is first created and ready to fetch data.
+    protected override async Task OnInitializedAsync()
     {
-        LoadData();
+        await LoadDataAsync();
     }
-    #endregion
 
-    #region 5. Core Data Methods
-    private void LoadData()
+    private async Task LoadDataAsync()
     {
-        var response = DepartmentService.GetAllDepartments(paging, searchName);
-        if (response != null && response.Result != null)
-        {
-            departmentList = response.Result;
+        var response = await DepartmentService.GetAllDepartmentsAsync(paging, searchName);
 
-            // CRUCIAL: Tangkap total baris keseluruhan dari respons backend
-            TotalData = response.Total;
-        }
+        departmentList = response.Result ?? [];
+        TotalData = response.Total;
     }
-    #endregion
 
-    #region 6. CRUD UI Actions
     private void OpenAddModal()
     {
         modalRef.Show();
@@ -142,57 +126,55 @@
 
     private void OpenEditModal(int id, string? name)
     {
-        // CRUCIAL: Pass the specific department data to the modal for editing
         modalRef.Show(id, name ?? "");
     }
 
-    private async Task DeleteDepartment(int id, string? name)
+    private async Task DeleteDepartmentAsync(int id, string? name)
     {
-        bool isConfirmed = await JS.InvokeAsync<bool>("confirm", $"Are you sure you want to delete department '{name}'?");
+        var confirmed = await JS.InvokeAsync<bool>(
+            "confirm", $"Are you sure you want to delete department '{name}'?");
 
-        if (isConfirmed)
+        if (!confirmed)
         {
-            var response = DepartmentService.DeleteDepartment(id);
-
-            if (response.Result)
-            {
-                // 1. Tarik ulang data bersih dari SQL Server
-                LoadData();
-                // 2. Paksa tabel UI untuk di-render ulang seketika
-                StateHasChanged();
-            }
-            else
-            {
-                await JS.InvokeVoidAsync("alert", response.Message);
-            }
+            return;
         }
-    }
-    #endregion
 
-    #region 7. Pagination Navigation
-    private void PreviousPage()
-    {
-        if (CurrentPage > 1)
+        var response = await DepartmentService.DeleteDepartmentAsync(id);
+
+        if (response.Result)
         {
-            paging.Start -= paging.Length;
-            LoadData();
+            await LoadDataAsync();
+            return;
         }
+
+        await JS.InvokeVoidAsync("alert", response.Message);
     }
 
-    private void NextPage()
+    private async Task PreviousPageAsync()
     {
-        if (CurrentPage < TotalPages)
+        if (CurrentPage <= 1)
         {
-            paging.Start += paging.Length;
-            LoadData();
+            return;
         }
+
+        paging.Start -= paging.Length;
+        await LoadDataAsync();
     }
 
-    private void GoToPage(int pageNumber)
+    private async Task NextPageAsync()
     {
-        // Diperbaiki: (pageNumber - 1)
+        if (CurrentPage >= TotalPages)
+        {
+            return;
+        }
+
+        paging.Start += paging.Length;
+        await LoadDataAsync();
+    }
+
+    private async Task GoToPageAsync(int pageNumber)
+    {
         paging.Start = (pageNumber - 1) * paging.Length;
-        LoadData();
+        await LoadDataAsync();
     }
-    #endregion
 }

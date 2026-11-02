@@ -4,6 +4,7 @@ using HRMS.LIB;
 using HRMS.Service.Base;
 using HRMS.Service.Interface;
 using HRMS.Service.Models;
+using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 using System.Net.NetworkInformation;
 
@@ -12,138 +13,152 @@ namespace HRMS.Service.Service
 {
     public class DepartmentService(HRMSContext context) : IDepartmentService
     {
-        private readonly HRMSContext _Context = context;
+        private readonly HRMSContext _context = context;
 
-        public BaseResponse<List<DepartmentList>> GetAllDepartments(BasePaging paging, string searchName)
+        public async Task<BaseResponse<List<DepartmentList>>> GetAllDepartmentsAsync(BasePaging paging, string searchName)
         {
-            var response = new BaseResponse<List<DepartmentList>>();
-
-            // CRUCIAL: IQueryable defers execution. The query is NOT sent to the SQL database yet.
-            // It only builds the SQL command dynamically based on your conditions.
-            var departments = _Context.MstDepartments.Where(d => d.IsDeleted == false &&
-                (string.IsNullOrEmpty(searchName) || (d.DepartmentName != null && d.DepartmentName.Contains(searchName))))
-                .Select(d => new DepartmentList()
+            var departments = _context.MstDepartments
+                .Where(department => !department.IsDeleted && (string.IsNullOrWhiteSpace(searchName) || department.DepartmentName!.Contains(searchName)))
+                .Select(department => new DepartmentList
                 {
-                    Id = d.Id,
-                    DepartmentName = d.DepartmentName,
-                    Created = d.Created,
-                    CreatedBy = d.CreatedBy
+                    Id = department.Id,
+                    DepartmentName = department.DepartmentName,
+                    Created = department.Created,
+                    CreatedBy = department.CreatedBy
                 });
 
-            // CRUCIAL: Dictionary mapping a string to a LINQ Expression. 
-            // This is a secure and efficient way to handle dynamic sorting based on user input.
+            // Define a dictionary to map column names to their corresponding expressions
             var columnMappings = new Dictionary<string, Expression<Func<DepartmentList, object?>>>
             {
-                { "Id", i => i.Id },
-                { "DepartmentName", i => i.DepartmentName },
-                { "Created", i => i.Created },
-                { "CreatedBy", i => i.CreatedBy }
+                ["Id"] = department => department.Id,
+                ["DepartmentName"] = department => department.DepartmentName,
+                ["Created"] = department => department.Created,
+                ["CreatedBy"] = department => department.CreatedBy
             };
 
-            if (paging.Column != null && columnMappings.ContainsKey(paging.Column))
+            // Apply sorting based on the provided column and sort direction
+            if (paging.Column is not null && columnMappings.TryGetValue(paging.Column, out var keySelector))
             {
-                var keySelector = columnMappings[paging.Column];
-                departments = Const.PAGING_SORT_ASC == paging.SortBy ? departments.OrderBy(keySelector) : departments.OrderByDescending(keySelector);
+                departments = paging.SortBy == Const.PAGING_SORT_ASC ? departments.OrderBy(keySelector) : departments.OrderByDescending(keySelector);
             }
 
-            // CRUCIAL: Methods like Count(), ToList(), and Take() trigger the actual execution to the database.
-            // Skip() and Take() translate directly into SQL OFFSET and FETCH to handle pagination efficiently.
-            response.Total = departments.Count();
-            response.Result = [.. departments.Skip(paging.Start).Take(paging.Length)];
+            // Get the total count of departments before applying pagination
+            var total = await departments.CountAsync();
 
-            return response;
+            // Apply pagination using Skip and Take
+            var result = await departments.Skip(paging.Start).Take(paging.Length).ToListAsync();
+
+            return new BaseResponse<List<DepartmentList>>
+            {
+                Total = total,
+                Result = result
+            };
         }
 
-        public BaseResponse<bool> CreateDepartment(CreateDepartment request)
+        public async Task<BaseResponse<bool>> CreateDepartmentAsync(CreateDepartment request)
         {
-            var response = new BaseResponse<bool>();
+            var departmentName = request.DepartmentName.Trim();
 
-            bool isExists = _Context.MstDepartments.Any(d => d.DepartmentName == request.DepartmentName && d.IsDeleted == false);
-            if (isExists)
+            // Check if the department name already exists and is not deleted
+            var alreadyExists = await _context.MstDepartments.AnyAsync(department =>
+                !department.IsDeleted && department.DepartmentName == departmentName);
+
+            if (alreadyExists)
             {
-                response.Message = "Department Name already exists";
-                response.Result = false;
-                return response;
+                return new BaseResponse<bool>
+                {
+                    Result = false,
+                    Message = "Department name already exists."
+                };
             }
 
-            MstDepartment newDepartment = new()
+            var department = new MstDepartment
             {
-                DepartmentName = request.DepartmentName,
+                DepartmentName = departmentName,
                 Created = DateTime.UtcNow,
-                CreatedBy = "System", 
+                CreatedBy = "System"
             };
 
-            _Context.MstDepartments.Add(newDepartment);
-            _Context.SaveChanges();
+            _context.MstDepartments.Add(department);
+            await _context.SaveChangesAsync();
 
-            response.Result = true;
-            response.Message = "Add Success";
-            return response;
+            return new BaseResponse<bool>
+            {
+                Result = true,
+                Message = "Department added successfully."
+            };
         }
 
-        public BaseResponse<bool> UpdateDepartment(UpdateDepartment request)
+        public async Task<BaseResponse<bool>> UpdateDepartmentAsync(UpdateDepartment request)
         {
-            var response = new BaseResponse<bool>();
+            // Trim the department name to remove any leading or trailing whitespace
+            var departmentName = request.DepartmentName.Trim();
 
-            // CRUCIAL: Retrieve the existing entity from the database first to ensure it exists and is not deleted.
-            var department = _Context.MstDepartments.FirstOrDefault(d => d.Id == request.Id && !d.IsDeleted);
+            // Check if the department exists and is not deleted
+            var department = await _context.MstDepartments.FirstOrDefaultAsync(item =>
+                item.Id == request.Id && !item.IsDeleted);
 
-            if (department == null)
+            if (department is null)
             {
-                response.Message = "Department not found.";
-                response.Result = false;
-                return response;
+                return new BaseResponse<bool>
+                {
+                    Result = false,
+                    Message = "Department not found."
+                };
             }
 
-            // CRUCIAL: Check for duplicate name, but exclude the current department's ID from the check.
-            bool isDuplicate = _Context.MstDepartments.Any(d => d.DepartmentName == request.DepartmentName &&
-                d.Id != request.Id && !d.IsDeleted);
+            // Check if the new department name already exists for a different department
+            var alreadyExists = await _context.MstDepartments.AnyAsync(item =>
+                item.Id != request.Id && !item.IsDeleted && item.DepartmentName == departmentName);
 
-            if (isDuplicate)
+            if (alreadyExists)
             {
-                response.Message = "Department Name already exists.";
-                response.Result = false;
-                return response;
+                return new BaseResponse<bool>
+                {
+                    Result = false,
+                    Message = "Department name already exists."
+                };
             }
 
-            // CRUCIAL: Update only the necessary fields. Do not overwrite 'Created' or 'CreatedBy' fields.
-            department.DepartmentName = request.DepartmentName;
+            department.DepartmentName = departmentName;
             department.Updated = DateTime.UtcNow;
-            department.UpdatedBy = "System"; // Akan diganti saat sistem login sudah siap
+            department.UpdatedBy = "System";
 
-            _Context.MstDepartments.Update(department);
-            _Context.SaveChanges();
+            await _context.SaveChangesAsync();
 
-            response.Result = true;
-            response.Message = "Update Success";
-            return response;
+            return new BaseResponse<bool>
+            {
+                Result = true,
+                Message = "Department updated successfully."
+            };
         }
 
-        public BaseResponse<bool> DeleteDepartment(int id)
+        public async Task<BaseResponse<bool>> DeleteDepartmentAsync(int id)
         {
-            var response = new BaseResponse<bool>();
+            // Check if the department exists and is not deleted
+            var department = await _context.MstDepartments.FirstOrDefaultAsync(item =>
+                item.Id == id && !item.IsDeleted);
 
-            // CRUCIAL: Find the department that is not yet deleted
-            var department = _Context.MstDepartments.FirstOrDefault(d => d.Id == id && !d.IsDeleted);
-
-            if (department == null)
+            if (department is null)
             {
-                response.Message = "Department not found.";
-                response.Result = false;
-                return response;
+                return new BaseResponse<bool>
+                {
+                    Result = false,
+                    Message = "Department not found."
+                };
             }
 
-            // CRUCIAL: Soft Delete implementation. We only update the flag, we do NOT use _Context.Remove()
             department.IsDeleted = true;
             department.Updated = DateTime.UtcNow;
-            department.UpdatedBy = "System"; // Akan diganti saat sistem login sudah siap
+            department.UpdatedBy = "System";
 
-            _Context.MstDepartments.Update(department);
-            _Context.SaveChanges();
+            await _context.SaveChangesAsync();
 
-            response.Result = true;
-            response.Message = "Delete Success";
-            return response;
+            return new BaseResponse<bool>
+            {
+                Result = true,
+                Message = "Department deleted successfully."
+            };
         }
     }
 
