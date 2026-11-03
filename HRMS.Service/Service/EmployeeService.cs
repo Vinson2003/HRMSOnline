@@ -75,24 +75,18 @@ namespace HRMS.Service.Service
         public async Task<BaseResponse<bool>> CreateEmployeeAsync(CreateEmployee request)
         {
             // Trim the input values to remove leading and trailing whitespace
-            var employeeNumber = request.EmployeeNumber.Trim();
             var email = request.Email.Trim();
             var fullName = request.FullName.Trim();
 
-            // Check if the employee number already exists in the database
-            var alreadyExists = await _context.MstEmployees.AnyAsync(e => e.EmployeeNumber == employeeNumber);
-            if (alreadyExists)
+            // Check if the email already exists in the database
+            if (await _context.MstEmployees.AnyAsync(e => e.Email == email))
             {
-                return new BaseResponse<bool>
-                {
-                    Result = false,
-                    Message = "Employee number already exists."
-                };
+                return new BaseResponse<bool> { Result = false, Message = "Email already exists." };
             }
 
             var newEmployee = new MstEmployee
             {
-                EmployeeNumber = employeeNumber,
+                EmployeeNumber = await GenerateEmployeeNumberAsync(),
                 FullName = fullName,
                 Email = email,
                 DepartmentId = request.DepartmentId,
@@ -115,6 +109,8 @@ namespace HRMS.Service.Service
         public async Task<BaseResponse<bool>> UpdateEmployeeAsync(UpdateEmployee request)
         {
             var employee = await _context.MstEmployees.FindAsync(request.Id);
+
+            // Check if the employee exists and is not deleted
             if (employee == null || employee.IsDeleted)
             {
                 return new BaseResponse<bool>
@@ -124,21 +120,20 @@ namespace HRMS.Service.Service
                 };
             }
 
-            var employeeNumber = request.EmployeeNumber.Trim();
             var email = request.Email.Trim();
             var fullName = request.FullName.Trim();
 
-            if (await _context.MstEmployees.AnyAsync(e => e.Id != request.Id && e.EmployeeNumber == employeeNumber))
+            // Check if the email already exists for another employee
+            if (await _context.MstEmployees.AnyAsync(e => e.Id != request.Id && e.Email == email))
             {
-                return new BaseResponse<bool> { Result = false, Message = "Employee number already exists." };
+                return new BaseResponse<bool> { Result = false, Message = "Email already exists." };
             }
-
+            // Check if the employee is trying to set themselves as their own manager
             if (request.ManagerId == request.Id)
             {
                 return new BaseResponse<bool> { Result = false, Message = "Employee cannot be their own manager." };
             }
 
-            employee.EmployeeNumber = employeeNumber;
             employee.FullName = fullName;
             employee.Email = email;
             employee.DepartmentId = request.DepartmentId;
@@ -179,6 +174,26 @@ namespace HRMS.Service.Service
                 Result = true,
                 Message = "Employee deleted successfully."
             };
+        }
+
+        private async Task<string> GenerateEmployeeNumberAsync()
+        {
+            var prefix = $"EMP-{DateTime.UtcNow.Year}-";
+
+            // No IsDeleted filter: the UNIQUE constraint in the database also counts deleted rows
+            var lastNumber = await _context.MstEmployees
+                .Where(e => e.EmployeeNumber.StartsWith(prefix))
+                .OrderByDescending(e => e.EmployeeNumber)
+                .Select(e => e.EmployeeNumber)
+                .FirstOrDefaultAsync();
+
+            var next = 1;
+            if (lastNumber is not null && int.TryParse(lastNumber[prefix.Length..], out var current))
+            {
+                next = current + 1;
+            }
+
+            return $"{prefix}{next:D4}";   // EMP-2026-0001
         }
     }
 }

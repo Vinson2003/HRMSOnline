@@ -17,7 +17,7 @@
 
         <div class="w-25">
             <input type="text" class="form-control" placeholder="Search Employee..."
-                   @bind="searchName" @bind:event="oninput" @onkeyup="LoadDataAsync" />
+                   @bind="searchName" @bind:event="oninput" @onkeyup="SearchAsync" />
         </div>
 
         <div>
@@ -40,13 +40,13 @@
             @* Always check for null or empty collections before iterating to prevent NullReferenceException rendering errors. *@
             @if (employeeList != null && employeeList.Any())
             {
-                @* The @foreach loop dynamically generates HTML rows based on the C# collection. *@
-                @foreach (var emp in employeeList)
+                @* Generate table rows for each employee in the list *@
+                @foreach (var (emp, index) in employeeList.Select((e, i) => (e, i)))
                 {
                     <tr>
-                        <td>@emp.Id</td>
-                        <td>@emp.EmployeeNumber</td>
+                        <td>@(paging.Start + index + 1)</td>
                         <td>@emp.FullName</td>
+                        <td>@emp.EmployeeNumber</td>
                         <td>@emp.DepartmentName</td>
                         <td>@emp.ManagerName</td>
                         <td class="text-center">
@@ -115,12 +115,27 @@
         await LoadDataAsync();
     }
 
+    // This method is called when the user types in the search input. 
+    // It resets the paging to the first page and reloads the data based on the search term.
+    private async Task SearchAsync()
+    {
+        paging.Start = 0;
+        await LoadDataAsync();
+    }
+
     private async Task LoadDataAsync()
     {
         var response = await EmployeeService.EmployeeListAsync(paging, searchName);
 
         employeeList = response.Result ?? [];
         TotalData = response.Total;
+
+        // If the current page has no data and it's not the first page, go back one page and reload data
+        if (!employeeList.Any() && paging.Start > 0)
+        {
+            paging.Start -= paging.Length;
+            await LoadDataAsync();
+        }
     }
 
     private async Task OpenAddModal()
