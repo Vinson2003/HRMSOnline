@@ -15,7 +15,6 @@ namespace HRMS.Service.Service
 
         public async Task<BaseResponse<List<EmployeeList>>> EmployeeListAsync(BasePaging paging, string searchName)
         {
-            // EmployeeService: ganti query awal
             var employees = _context.MstEmployees
                 .Where(x => !x.IsDeleted && (string.IsNullOrWhiteSpace(searchName) || x.FullName.Contains(searchName)))
                 .Select(x => new EmployeeList
@@ -54,9 +53,11 @@ namespace HRMS.Service.Service
             {
                 employees = paging.SortBy == Const.PAGING_SORT_ASC ? employees.OrderBy(keySelector) : employees.OrderByDescending(keySelector);
             }
-
-            // If no sorting is applied, ensure a default order to avoid issues with pagination
-            if (!employees.Expression.ToString().Contains("OrderBy")) employees = employees.OrderBy(e => e.Id);
+            else
+            {
+                // Default order so paging is stable
+                employees = employees.OrderBy(e => e.Id);
+            }
 
             // Get the total count of employees before applying pagination
             var total = await employees.CountAsync();
@@ -124,6 +125,8 @@ namespace HRMS.Service.Service
             }
 
             var employeeNumber = request.EmployeeNumber.Trim();
+            var email = request.Email.Trim();
+            var fullName = request.FullName.Trim();
 
             if (await _context.MstEmployees.AnyAsync(e => e.Id != request.Id && e.EmployeeNumber == employeeNumber))
             {
@@ -135,9 +138,9 @@ namespace HRMS.Service.Service
                 return new BaseResponse<bool> { Result = false, Message = "Employee cannot be their own manager." };
             }
 
-            employee.EmployeeNumber = request.EmployeeNumber.Trim();
-            employee.FullName = request.FullName.Trim();
-            employee.Email = request.Email.Trim();
+            employee.EmployeeNumber = employeeNumber;
+            employee.FullName = fullName;
+            employee.Email = email;
             employee.DepartmentId = request.DepartmentId;
             employee.ManagerId = request.ManagerId;
             employee.AnnualLeaveBalance = request.AnnualLeaveBalance;

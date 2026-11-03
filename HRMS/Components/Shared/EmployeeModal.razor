@@ -1,0 +1,160 @@
+﻿@using HRMS.Service.Base
+@using HRMS.Service.Interface
+@using HRMS.Service.Models
+@inject IEmployeeService EmployeeService
+@inject IDepartmentService DepartmentService
+
+@if (IsVisible)
+{
+    <!-- Backdrop div creates the dark background overlay behind the Bootstrap modal -->
+    <div class="modal-backdrop fade show"></div>
+}
+
+<div class="modal fade @(IsVisible ? "show d-block" : "")" tabindex="1" role="dialog" data-bs-backdrop="static">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">@modalTitle</h5>
+            </div>
+            <div class="modal-body">
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <div class="alert alert-danger mb-3">@errorMessage</div>
+                }
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Employee Number</label>
+                    <input type="text" class="form-control" maxlength="20" @bind="employeeNumber" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Full Name</label>
+                    <input type="text" class="form-control" maxlength="150" @bind="fullName" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Email</label>
+                    <input type="email" class="form-control" maxlength="150" @bind="email" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Department</label>
+                    <select class="form-select" @bind="departmentId">
+                        <option value="0">-- Select department --</option>
+                        @foreach (var d in departments)
+                        {
+                            <option value="@d.Id">@d.DepartmentName</option>
+                        }
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Manager</label>
+                    <select class="form-select" @bind="managerId">
+                        <option value="">-- No manager --</option>
+                        @foreach (var m in managers.Where(x => x.Id != currentId))
+                        {
+                            <option value="@m.Id">@m.FullName (@m.EmployeeNumber)</option>
+                        }
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Annual Leave Balance</label>
+                    <input type="number" min="0" class="form-control" @bind="annualLeaveBalance" />
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" @onclick="CloseModal">Cancel</button>
+                <button type="button" class="btn btn-primary" @onclick="SubmitFormAsync">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] 
+    public EventCallback OnSaveSuccess { get; set; }
+
+    private List<DepartmentList> departments = new();
+    private List<EmployeeList> managers = new();
+
+    private bool IsVisible;
+    private string errorMessage = string.Empty;
+    private string modalTitle = "Add Employee";
+
+    private int currentId;
+    private string employeeNumber = string.Empty;
+    private string fullName = string.Empty;
+    private string email = string.Empty;
+    private int departmentId;
+    private int? managerId;
+    private int annualLeaveBalance = 12;
+
+    public void CloseModal()
+    {
+        IsVisible = false;
+        StateHasChanged();
+    }
+
+    // employee == null -> Add, otherwise Edit
+    public async Task ShowAsync(EmployeeList? employee = null)
+    {
+        var paging = new BasePaging { Start = 0, Length = 1000 };
+        departments = (await DepartmentService.DepartmentsListAsync(paging, string.Empty)).Result ?? new();
+        managers = (await EmployeeService.EmployeeListAsync(paging, string.Empty)).Result ?? new();
+
+        currentId = employee?.Id ?? 0;
+        employeeNumber = employee?.EmployeeNumber ?? string.Empty;
+        fullName = employee?.FullName ?? string.Empty;
+        email = employee?.Email ?? string.Empty;
+        departmentId = employee?.DepartmentId ?? 0;
+        managerId = employee?.ManagerId;
+        annualLeaveBalance = employee?.AnnualLeaveBalance ?? 12;
+
+        modalTitle = employee is null ? "Add Employee" : "Edit Employee";
+        errorMessage = string.Empty;
+        IsVisible = true;
+        StateHasChanged();
+    }
+
+    private async Task SubmitFormAsync()
+    {
+        if (string.IsNullOrWhiteSpace(employeeNumber) || string.IsNullOrWhiteSpace(fullName)
+            || string.IsNullOrWhiteSpace(email) || departmentId == 0)
+        {
+            errorMessage = "Employee number, full name, email and department are required.";
+            return;
+        }
+        if (annualLeaveBalance < 0)
+        {
+            errorMessage = "Leave balance cannot be negative.";
+            return;
+        }
+
+        var response = currentId == 0
+            ? await EmployeeService.CreateEmployeeAsync(new CreateEmployee
+            {
+                EmployeeNumber = employeeNumber,
+                FullName = fullName,
+                Email = email,
+                DepartmentId = departmentId,
+                ManagerId = managerId,
+                AnnualLeaveBalance = annualLeaveBalance
+            })
+            : await EmployeeService.UpdateEmployeeAsync(new UpdateEmployee
+            {
+                Id = currentId,
+                EmployeeNumber = employeeNumber,
+                FullName = fullName,
+                Email = email,
+                DepartmentId = departmentId,
+                ManagerId = managerId,
+                AnnualLeaveBalance = annualLeaveBalance
+            });
+
+        if (!response.Result)
+        {
+            errorMessage = response.Message ?? "Failed to save employee.";
+            return;
+        }
+
+        IsVisible = false;
+        await OnSaveSuccess.InvokeAsync();
+    }
+}

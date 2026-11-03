@@ -113,7 +113,7 @@
 
     private async Task LoadDataAsync()
     {
-        var response = await DepartmentService.GetAllDepartmentsAsync(paging, searchName);
+        var response = await DepartmentService.DepartmentsListAsync(paging, searchName);
 
         departmentList = response.Result ?? [];
         TotalData = response.Total;
