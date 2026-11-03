@@ -15,20 +15,22 @@ namespace HRMS.Service.Service
 
         public async Task<BaseResponse<List<EmployeeList>>> EmployeeListAsync(BasePaging paging, string searchName)
         {
+            // EmployeeService: ganti query awal
             var employees = _context.MstEmployees
-                .Join(_context.MstDepartments, employee => employee.DepartmentId, department => department.Id, (employee, department) => new { Employee = employee, Department = department })
-                .Where(x => !x.Employee.IsDeleted && (string.IsNullOrWhiteSpace(searchName) || x.Employee.FullName!.Contains(searchName)))
+                .Where(x => !x.IsDeleted && (string.IsNullOrWhiteSpace(searchName) || x.FullName.Contains(searchName)))
                 .Select(x => new EmployeeList
                 {
-                    Id = x.Employee.Id,
-                    EmployeeNumber = x.Employee.EmployeeNumber,
-                    FullName = x.Employee.FullName,
-                    Email = x.Employee.Email,
-                    DepartmentId = x.Employee.DepartmentId,
-                    ManagerId = x.Employee.ManagerId,
-                    AnnualLeaveBalance = x.Employee.AnnualLeaveBalance,
-                    Created = x.Employee.Created,
-                    CreatedBy = x.Employee.CreatedBy
+                    Id = x.Id,
+                    EmployeeNumber = x.EmployeeNumber,
+                    FullName = x.FullName,
+                    Email = x.Email,
+                    DepartmentId = x.DepartmentId,
+                    DepartmentName = x.Department.DepartmentName,
+                    ManagerId = x.ManagerId,
+                    ManagerName = x.Manager != null ? x.Manager.FullName : null,
+                    AnnualLeaveBalance = x.AnnualLeaveBalance,
+                    Created = x.Created,
+                    CreatedBy = x.CreatedBy
                 });
 
             // Define a dictionary to map column names to their corresponding expressions
@@ -39,7 +41,9 @@ namespace HRMS.Service.Service
                 ["FullName"] = employee => employee.FullName,
                 ["Email"] = employee => employee.Email,
                 ["DepartmentId"] = employee => employee.DepartmentId,
+                ["DepartmentName"] = employee => employee.DepartmentName,
                 ["ManagerId"] = employee => employee.ManagerId,
+                ["ManagerName"] = employee => employee.ManagerName,
                 ["AnnualLeaveBalance"] = employee => employee.AnnualLeaveBalance,
                 ["Created"] = employee => employee.Created,
                 ["CreatedBy"] = employee => employee.CreatedBy
@@ -50,6 +54,9 @@ namespace HRMS.Service.Service
             {
                 employees = paging.SortBy == Const.PAGING_SORT_ASC ? employees.OrderBy(keySelector) : employees.OrderByDescending(keySelector);
             }
+
+            // If no sorting is applied, ensure a default order to avoid issues with pagination
+            if (!employees.Expression.ToString().Contains("OrderBy")) employees = employees.OrderBy(e => e.Id);
 
             // Get the total count of employees before applying pagination
             var total = await employees.CountAsync();
@@ -66,12 +73,13 @@ namespace HRMS.Service.Service
 
         public async Task<BaseResponse<bool>> CreateEmployeeAsync(CreateEmployee request)
         {
+            // Trim the input values to remove leading and trailing whitespace
             var employeeNumber = request.EmployeeNumber.Trim();
+            var email = request.Email.Trim();
+            var fullName = request.FullName.Trim();
 
-            // Check if the employee number already exists and is not deleted
-            var alreadyExists = await _context.MstEmployees.AnyAsync(employee =>
-                !employee.IsDeleted && employee.EmployeeNumber == employeeNumber);
-
+            // Check if the employee number already exists in the database
+            var alreadyExists = await _context.MstEmployees.AnyAsync(e => e.EmployeeNumber == employeeNumber);
             if (alreadyExists)
             {
                 return new BaseResponse<bool>
@@ -84,8 +92,8 @@ namespace HRMS.Service.Service
             var newEmployee = new MstEmployee
             {
                 EmployeeNumber = employeeNumber,
-                FullName = request.FullName,
-                Email = request.Email,
+                FullName = fullName,
+                Email = email,
                 DepartmentId = request.DepartmentId,
                 ManagerId = request.ManagerId,
                 AnnualLeaveBalance = request.AnnualLeaveBalance,
@@ -115,9 +123,21 @@ namespace HRMS.Service.Service
                 };
             }
 
+            var employeeNumber = request.EmployeeNumber.Trim();
+
+            if (await _context.MstEmployees.AnyAsync(e => e.Id != request.Id && e.EmployeeNumber == employeeNumber))
+            {
+                return new BaseResponse<bool> { Result = false, Message = "Employee number already exists." };
+            }
+
+            if (request.ManagerId == request.Id)
+            {
+                return new BaseResponse<bool> { Result = false, Message = "Employee cannot be their own manager." };
+            }
+
             employee.EmployeeNumber = request.EmployeeNumber.Trim();
-            employee.FullName = request.FullName;
-            employee.Email = request.Email;
+            employee.FullName = request.FullName.Trim();
+            employee.Email = request.Email.Trim();
             employee.DepartmentId = request.DepartmentId;
             employee.ManagerId = request.ManagerId;
             employee.AnnualLeaveBalance = request.AnnualLeaveBalance;

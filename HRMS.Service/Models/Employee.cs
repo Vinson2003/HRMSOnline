@@ -18,6 +18,10 @@ namespace HRMS.Service.Models
 
         public int? ManagerId { get; set; }
 
+        public string? DepartmentName { get; set; }
+
+        public string? ManagerName { get; set; }
+
         public int AnnualLeaveBalance { get; set; }
 
         public DateTime? Created { get; set; }
