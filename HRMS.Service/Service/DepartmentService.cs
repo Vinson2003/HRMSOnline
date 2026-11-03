@@ -15,7 +15,7 @@ namespace HRMS.Service.Service
     {
         private readonly HRMSContext _context = context;
 
-        public async Task<BaseResponse<List<DepartmentList>>> GetAllDepartmentsAsync(BasePaging paging, string searchName)
+        public async Task<BaseResponse<List<DepartmentList>>> DepartmentsListAsync(BasePaging paging, string searchName)
         {
             var departments = _context.MstDepartments
                 .Where(department => !department.IsDeleted && (string.IsNullOrWhiteSpace(searchName) || department.DepartmentName!.Contains(searchName)))
@@ -76,7 +76,7 @@ namespace HRMS.Service.Service
             {
                 DepartmentName = departmentName,
                 Created = DateTime.UtcNow,
-                CreatedBy = "System"
+                CreatedBy = "System" // You can replace "System" with the actual user who is creating the employee if available
             };
 
             _context.MstDepartments.Add(department);
@@ -122,7 +122,7 @@ namespace HRMS.Service.Service
 
             department.DepartmentName = departmentName;
             department.Updated = DateTime.UtcNow;
-            department.UpdatedBy = "System";
+            department.UpdatedBy = "System"; // You can replace "System" with the actual user who is creating the employee if available
 
             await _context.SaveChangesAsync();
 
@@ -150,7 +150,7 @@ namespace HRMS.Service.Service
 
             department.IsDeleted = true;
             department.Updated = DateTime.UtcNow;
-            department.UpdatedBy = "System";
+            department.UpdatedBy = "System"; // You can replace "System" with the actual user who is creating the employee if available
 
             await _context.SaveChangesAsync();
 

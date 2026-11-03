@@ -6,7 +6,7 @@ namespace HRMS.Service.Interface
 {
     public interface IDepartmentService
     {
-        Task<BaseResponse<List<DepartmentList>>> GetAllDepartmentsAsync(BasePaging paging, string searchName);
+        Task<BaseResponse<List<DepartmentList>>> DepartmentsListAsync(BasePaging paging, string searchName);
 
         Task<BaseResponse<bool>> CreateDepartmentAsync(CreateDepartment request);
 
