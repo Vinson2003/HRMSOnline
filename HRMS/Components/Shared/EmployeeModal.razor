@@ -113,15 +113,17 @@
         modalTitle = employee is null ? "Add Employee" : "Edit Employee";
         errorMessage = string.Empty;
         IsVisible = true;
+
+        // Notify the component to re-render and display the modal
         StateHasChanged();
     }
 
+    // Validate and submit the form data to the service
     private async Task SubmitFormAsync()
     {
-        if (string.IsNullOrWhiteSpace(employeeNumber) || string.IsNullOrWhiteSpace(fullName)
-            || string.IsNullOrWhiteSpace(email) || departmentId == 0)
+        if (string.IsNullOrWhiteSpace(fullName) || string.IsNullOrWhiteSpace(email) || departmentId == 0)
         {
-            errorMessage = "Employee number, full name, email and department are required.";
+            errorMessage = "Full name, email and department are required.";
             return;
         }
         if (annualLeaveBalance < 0)
@@ -130,6 +132,7 @@
             return;
         }
 
+        // Call the appropriate service method based on whether we are adding or editing an employee
         var response = currentId == 0
             ? await EmployeeService.CreateEmployeeAsync(new CreateEmployee
             {
@@ -158,6 +161,7 @@
         }
 
         IsVisible = false;
+        // InvokeAsync: Notify the parent component that the save operation was successful
         await OnSaveSuccess.InvokeAsync();
     }
 }
