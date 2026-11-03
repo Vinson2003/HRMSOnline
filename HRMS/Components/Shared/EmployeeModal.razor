@@ -136,7 +136,6 @@
         var response = currentId == 0
             ? await EmployeeService.CreateEmployeeAsync(new CreateEmployee
             {
-                EmployeeNumber = employeeNumber,
                 FullName = fullName,
                 Email = email,
                 DepartmentId = departmentId,
@@ -146,7 +145,6 @@
             : await EmployeeService.UpdateEmployeeAsync(new UpdateEmployee
             {
                 Id = currentId,
-                EmployeeNumber = employeeNumber,
                 FullName = fullName,
                 Email = email,
                 DepartmentId = departmentId,

@@ -31,8 +31,6 @@ namespace HRMS.Service.Models
 
     public class CreateEmployee
     {
-        public string EmployeeNumber { get; set; } = null!;
-
         public string FullName { get; set; } = null!;
 
         public string Email { get; set; } = null!;
@@ -47,7 +45,6 @@ namespace HRMS.Service.Models
     public class UpdateEmployee
     {
         public int Id { get; set; }
-        public string EmployeeNumber { get; set; } = null!;
 
         public string FullName { get; set; } = null!;
 

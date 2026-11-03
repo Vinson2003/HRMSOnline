@@ -29,8 +29,9 @@
         <thead class="table-dark">
             <tr>
                 <th>No</th>
-                <th>Employee Name</th>
                 <th>Employee Number</th>
+                <th>Employee Name</th>
+                <th>Email</th>
                 <th>Department</th>
                 <th>Manager</th>
                 <th class="text-center w-25">Action</th>
@@ -45,8 +46,9 @@
                 {
                     <tr>
                         <td>@(paging.Start + index + 1)</td>
-                        <td>@emp.FullName</td>
                         <td>@emp.EmployeeNumber</td>
+                        <td>@emp.FullName</td>
+                        <td>@emp.Email</td>
                         <td>@emp.DepartmentName</td>
                         <td>@emp.ManagerName</td>
                         <td class="text-center">

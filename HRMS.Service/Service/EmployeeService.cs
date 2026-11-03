@@ -163,6 +163,16 @@ namespace HRMS.Service.Service
                 };
             }
 
+            // Check if the employee is a manager of other employees
+            if (await _context.MstEmployees.AnyAsync(e => !e.IsDeleted && e.ManagerId == employeeId))
+            {
+                return new BaseResponse<bool>
+                {
+                    Result = false,
+                    Message = "Cannot delete: this employee is still a manager of other employees."
+                };
+            }
+
             employee.IsDeleted = true;
             employee.Updated = DateTime.UtcNow;
             employee.UpdatedBy = "System"; // You can replace "System" with the actual user who is deleting the employee if available
