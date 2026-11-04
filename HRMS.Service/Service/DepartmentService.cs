@@ -57,6 +57,12 @@ namespace HRMS.Service.Service
 
         public async Task<BaseResponse<bool>> CreateDepartmentAsync(CreateDepartment request)
         {
+            // Trim the department name to remove any leading or trailing whitespace
+            if (string.IsNullOrWhiteSpace(request.DepartmentName))
+            {
+                return new BaseResponse<bool> { Result = false, Message = "Department name cannot be empty." };
+            }
+
             var departmentName = request.DepartmentName.Trim();
 
             // Check if the department name already exists and is not deleted
@@ -92,6 +98,11 @@ namespace HRMS.Service.Service
         public async Task<BaseResponse<bool>> UpdateDepartmentAsync(UpdateDepartment request)
         {
             // Trim the department name to remove any leading or trailing whitespace
+            if (string.IsNullOrWhiteSpace(request.DepartmentName))
+            {
+                return new BaseResponse<bool> { Result = false, Message = "Department name cannot be empty." };
+            }
+
             var departmentName = request.DepartmentName.Trim();
 
             // Check if the department exists and is not deleted
@@ -145,6 +156,19 @@ namespace HRMS.Service.Service
                 {
                     Result = false,
                     Message = "Department not found."
+                };
+            }
+
+            // Block deleting a department that still has active employees
+            var hasActiveEmployees = await _context.MstEmployees.AnyAsync(e =>
+                !e.IsDeleted && e.DepartmentId == id);
+
+            if (hasActiveEmployees)
+            {
+                return new BaseResponse<bool>
+                {
+                    Result = false,
+                    Message = "Cannot delete: this department still has active employees."
                 };
             }
 
