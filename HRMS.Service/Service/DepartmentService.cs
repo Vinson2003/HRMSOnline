@@ -1,4 +1,5 @@
-﻿using HRMS.Data.Context;
+﻿using Azure;
+using HRMS.Data.Context;
 using HRMS.Data.Entity;
 using HRMS.LIB;
 using HRMS.Service.Base;
@@ -17,6 +18,8 @@ namespace HRMS.Service.Service
 
         public async Task<BaseResponse<List<DepartmentList>>> DepartmentsListAsync(BasePaging paging, string searchName)
         {
+            var response = new BaseResponse<List<DepartmentList>>();
+
             var departments = _context.MstDepartments
                 .Where(department => !department.IsDeleted && (string.IsNullOrWhiteSpace(searchName) || department.DepartmentName!.Contains(searchName)))
                 .Select(department => new DepartmentList
@@ -48,115 +51,107 @@ namespace HRMS.Service.Service
             // Apply pagination using Skip and Take
             var result = await departments.Skip(paging.Start).Take(paging.Length).ToListAsync();
 
-            return new BaseResponse<List<DepartmentList>>
-            {
-                Total = total,
-                Result = result
-            };
+            response.Total = total;
+            response.Result = result;
+            return response;
         }
 
         public async Task<BaseResponse<bool>> CreateDepartmentAsync(CreateDepartment request)
         {
+            var response = new BaseResponse<bool>();
+
             // Trim the department name to remove any leading or trailing whitespace
             if (string.IsNullOrWhiteSpace(request.DepartmentName))
             {
-                return new BaseResponse<bool> { Result = false, Message = "Department name cannot be empty." };
+                response.Result = false;
+                response.Message = "Department name cannot be empty.";
+                return response;
             }
 
             var departmentName = request.DepartmentName.Trim();
 
             // Check if the department name already exists and is not deleted
-            var alreadyExists = await _context.MstDepartments.AnyAsync(department =>
-                !department.IsDeleted && department.DepartmentName == departmentName);
+            var alreadyExists = await _context.MstDepartments.AnyAsync(department => !department.IsDeleted 
+                && department.DepartmentName == departmentName);
 
             if (alreadyExists)
             {
-                return new BaseResponse<bool>
-                {
-                    Result = false,
-                    Message = "Department name already exists."
-                };
+                response.Result = false;
+                response.Message = "Department name already exists.";
+                return response;
             }
 
             var department = new MstDepartment
             {
                 DepartmentName = departmentName,
                 Created = DateTime.UtcNow,
-                CreatedBy = "System" // You can replace "System" with the actual user who is creating the employee if available
+                CreatedBy = "System"
             };
 
             _context.MstDepartments.Add(department);
             await _context.SaveChangesAsync();
 
-            return new BaseResponse<bool>
-            {
-                Result = true,
-                Message = "Department added successfully."
-            };
+            response.Result = true;
+            response.Message = "Department Added Succesfull";
+            return response;
         }
 
         public async Task<BaseResponse<bool>> UpdateDepartmentAsync(UpdateDepartment request)
         {
-            // Trim the department name to remove any leading or trailing whitespace
+            var response = new BaseResponse<bool>();
+
             if (string.IsNullOrWhiteSpace(request.DepartmentName))
             {
-                return new BaseResponse<bool> { Result = false, Message = "Department name cannot be empty." };
+                response.Result = false;
+                response.Message = "Department name cannot be empty.";
+                return response;
             }
 
             var departmentName = request.DepartmentName.Trim();
 
             // Check if the department exists and is not deleted
-            var department = await _context.MstDepartments.FirstOrDefaultAsync(item =>
-                item.Id == request.Id && !item.IsDeleted);
-
-            if (department is null)
+            var department = await _context.MstDepartments.FirstOrDefaultAsync(item => item.Id == request.Id && !item.IsDeleted);
+            if (department == null)
             {
-                return new BaseResponse<bool>
-                {
-                    Result = false,
-                    Message = "Department not found."
-                };
+                response.Result = false;
+                response.Message = "Department not found";
+                return response;
             }
 
             // Check if the new department name already exists for a different department
-            var alreadyExists = await _context.MstDepartments.AnyAsync(item =>
-                item.Id != request.Id && !item.IsDeleted && item.DepartmentName == departmentName);
+            var alreadyExists = await _context.MstDepartments.AnyAsync(item => item.Id != request.Id && 
+                !item.IsDeleted && item.DepartmentName == departmentName);
 
             if (alreadyExists)
             {
-                return new BaseResponse<bool>
-                {
-                    Result = false,
-                    Message = "Department name already exists."
-                };
+                response.Result = false;
+                response.Message = "Department name already exists.";
+                return response;
             }
 
             department.DepartmentName = departmentName;
             department.Updated = DateTime.UtcNow;
-            department.UpdatedBy = "System"; // You can replace "System" with the actual user who is creating the employee if available
+            department.UpdatedBy = "System"; 
 
             await _context.SaveChangesAsync();
 
-            return new BaseResponse<bool>
-            {
-                Result = true,
-                Message = "Department updated successfully."
-            };
+            response.Result = true;
+            response.Message = "Department updated successfully.";
+            return response;
         }
 
         public async Task<BaseResponse<bool>> DeleteDepartmentAsync(int id)
         {
+            var response = new BaseResponse<bool>();
+
             // Check if the department exists and is not deleted
             var department = await _context.MstDepartments.FirstOrDefaultAsync(item =>
                 item.Id == id && !item.IsDeleted);
-
-            if (department is null)
+            if (department == null)
             {
-                return new BaseResponse<bool>
-                {
-                    Result = false,
-                    Message = "Department not found."
-                };
+                response.Result = true;
+                response.Message = "Department not found";
+                return response;
             }
 
             // Block deleting a department that still has active employees
@@ -165,24 +160,20 @@ namespace HRMS.Service.Service
 
             if (hasActiveEmployees)
             {
-                return new BaseResponse<bool>
-                {
-                    Result = false,
-                    Message = "Cannot delete: this department still has active employees."
-                };
+                response.Result = false;
+                response.Message = "Cannot delete: this department still has active employees.";
+                return response;
             }
 
             department.IsDeleted = true;
             department.Updated = DateTime.UtcNow;
-            department.UpdatedBy = "System"; // You can replace "System" with the actual user who is creating the employee if available
+            department.UpdatedBy = "System";
 
             await _context.SaveChangesAsync();
 
-            return new BaseResponse<bool>
-            {
-                Result = true,
-                Message = "Department deleted successfully."
-            };
+            response.Result = true;
+            response.Message = "Department deleted successfully.";
+            return response;
         }
     }
 
