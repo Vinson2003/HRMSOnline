@@ -236,6 +236,14 @@ namespace HRMS.Service.Service
                 return response;
             }
 
+            // Check if the employee is trying to set themselves as their own manager
+            if (request.ManagerId == request.Id)
+            {
+                response.Result = false;
+                response.Message = "Employee cannot be their own manager.";
+                return response;
+            }
+
             employee.FullName = fullName;
             employee.Email = email;
             employee.DepartmentId = request.DepartmentId;
