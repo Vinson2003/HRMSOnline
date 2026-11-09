@@ -12,8 +12,11 @@ CREATE TABLE Mst_LeaveType (
     Id INT IDENTITY(1,1) PRIMARY KEY,
     TypeName VARCHAR(50) NOT NULL,
     RequiresAttachment BIT NOT NULL DEFAULT 0,
-    IsDeleted BIT NOT NULL DEFAULT 0
-
+    IsDeleted BIT NOT NULL DEFAULT 0,
+    Created DATETIME Null,
+    CreatedBy NVARCHAR(100) NULL,
+    Updated DATETIME NULL,
+    UpdatedBy NVARCHAR(100) NULL
 );
 
 CREATE TABLE Mst_Employee (

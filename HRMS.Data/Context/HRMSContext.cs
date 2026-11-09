@@ -78,9 +78,13 @@ public partial class HRMSContext : DbContext
 
             entity.ToTable("Mst_LeaveType");
 
+            entity.Property(e => e.Created).HasColumnType("datetime");
+            entity.Property(e => e.CreatedBy).HasMaxLength(100);
             entity.Property(e => e.TypeName)
                 .HasMaxLength(50)
                 .IsUnicode(false);
+            entity.Property(e => e.Updated).HasColumnType("datetime");
+            entity.Property(e => e.UpdatedBy).HasMaxLength(100);
         });
 
         modelBuilder.Entity<TrxLeaveApproval>(entity =>

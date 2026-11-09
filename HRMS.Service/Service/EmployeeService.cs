@@ -93,7 +93,7 @@ namespace HRMS.Service.Service
                 ManagerId = request.ManagerId,
                 AnnualLeaveBalance = request.AnnualLeaveBalance,
                 Created = DateTime.UtcNow,
-                CreatedBy = "System" // You can replace "System" with the actual user who is creating the employee if available
+                CreatedBy = "System"
             };
 
             _context.MstEmployees.Add(newEmployee);
@@ -128,6 +128,7 @@ namespace HRMS.Service.Service
             {
                 return new BaseResponse<bool> { Result = false, Message = "Email already exists." };
             }
+
             // Check if the employee is trying to set themselves as their own manager
             if (request.ManagerId == request.Id)
             {
@@ -140,7 +141,7 @@ namespace HRMS.Service.Service
             employee.ManagerId = request.ManagerId;
             employee.AnnualLeaveBalance = request.AnnualLeaveBalance;
             employee.Updated = DateTime.UtcNow;
-            employee.UpdatedBy = "System"; // You can replace "System" with the actual user who is updating the employee if available
+            employee.UpdatedBy = "System"; 
 
             await _context.SaveChangesAsync();
 
@@ -175,7 +176,7 @@ namespace HRMS.Service.Service
 
             employee.IsDeleted = true;
             employee.Updated = DateTime.UtcNow;
-            employee.UpdatedBy = "System"; // You can replace "System" with the actual user who is deleting the employee if available
+            employee.UpdatedBy = "System"; 
 
             await _context.SaveChangesAsync();
 
