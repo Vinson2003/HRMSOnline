@@ -79,7 +79,7 @@ namespace HRMS.Service.Service
                 return response;
             }
 
-            if (await _context.MstLeaveTypes.AnyAsync(e => e.TypeName == typeName))
+            if (await _context.MstLeaveTypes.AnyAsync(e => e.TypeName == typeName && e!.IsDeleted))
             {
                 response.Result = false;
                 response.Message = "Type Name already exists.";
@@ -130,7 +130,7 @@ namespace HRMS.Service.Service
                 return response;
             }
 
-            if (await _context.MstLeaveTypes.AnyAsync(e => e.Id == request.Id && e.TypeName == typeName))
+            if (await _context.MstLeaveTypes.AnyAsync(e => e.Id != request.Id && e.TypeName == typeName && e!.IsDeleted))
             {
                 response.Result = false;
                 response.Message = "Type Name already exists.";

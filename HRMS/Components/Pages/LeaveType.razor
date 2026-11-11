@@ -10,12 +10,10 @@
 
 <PageTitle>Leave Type</PageTitle>
 
-<h3>LeaveType</h3>
-
 <div class="mt-2">
-    <h4>Master Employee</h4>
+    <h4>Master Leave Type</h4>
 
-    <div class="d-flex justify-content-between align-items-center mb-3 mt-2">
+    <div class="d-flex justify-content-end mb-3 mt-2">
 
         @* <div class="w-25">
             <input type="text" class="form-control" placeholder="Search Employee..."
@@ -23,7 +21,7 @@
         </div> *@
 
         <div>
-            <button class="btn btn-primary" @onclick="OpenAddModal">Add Lrave Type</button>
+            <button class="btn btn-primary" @onclick="OpenAddModal">Add Leave Type</button>
         </div>
     </div>
 
@@ -41,13 +39,13 @@
             @* Always check for null or empty collections before iterating to prevent NullReferenceException rendering errors. *@
             @if (leaveTypeList != null && leaveTypeList.Any())
             {
-                @* Generate table rows for each employee in the list *@
+                @* Generate table rows for each leave type in the list *@
                 @foreach (var (data, index) in leaveTypeList.Select((e, i) => (e, i)))
                 {
                     <tr>
                         <td>@(paging.Start + index + 1)</td>
                         <td>@data.TypeName</td>
-                        <td>@data.RequiresAttachment</td>
+                        <td>@(data.RequiresAttachment ? "Yes" : "No")</td>
                         <td>@data.Created</td>
                         <td class="text-center">
                             <button class="btn btn-sm btn-warning me-2" @onclick="() => OpenEditModal(data)">Edit</button>
@@ -59,7 +57,7 @@
             else
             {
                 <tr>
-                    <td colspan="6" class="text-center">Data not found....</td>
+                    <td colspan="5" class="text-center">Data not found....</td>
                 </tr>
             }
         </tbody>
@@ -98,7 +96,6 @@
     private LeaveTypeModal modalRef = null!;
 
     private List<LeaveTypeList> leaveTypeList = new();
-    private string searchName = string.Empty;
     private BasePaging paging = new BasePaging { Start = 0, Length = 10, Column = "Id", SortBy = Const.PAGING_SORT_ASC };
 
     private int TotalData = 0;
@@ -112,14 +109,6 @@
     // Blazor lifecycle method. OnInitialized is called when the component is first created and ready to fetch data.
     protected override async Task OnInitializedAsync()
     {
-        await LoadDataAsync();
-    }
-
-    // This method is called when the user types in the search input.
-    // It resets the paging to the first page and reloads the data based on the search term.
-    private async Task SearchAsync()
-    {
-        paging.Start = 0;
         await LoadDataAsync();
     }
 

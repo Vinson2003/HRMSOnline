@@ -28,14 +28,9 @@
                     <input type="text" class="form-control" maxlength="50" @bind="typeName" />
                 </div>
                 <div class="mb-3">
-                    <label class="form-label fw-bold">Require Attachment</label>
                     <div class="form-check">
-                        <input class="form-check-input" type="checkbox" value="" id="checkDefault" checked />
-                        <label class="form-check-label" for="checkDefault">No</label>
-                    </div>
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" value="" id="checkLeaveType" checked />
-                        <label class="form-check-label" for="checkLeaveType">Yes</label>
+                        <input class="form-check-input" type="checkbox" id="requiresAttachment" @bind="requiresAttachment" />
+                        <label class="form-check-label" for="requiresAttachment">Requires attachment</label>
                     </div>
                 </div>
             </div>
@@ -52,8 +47,6 @@
     [Parameter]
     public EventCallback OnSaveSuccess { get; set; }
 
-    private List<LeaveTypeList> leaveTypes = new();
-
     private bool IsVisible;
     private string errorMessage = string.Empty;
     private string modalTitle = "Add Leave Type";
@@ -69,33 +62,32 @@
     }
 
     // leaveType == null -> Add, otherwise Edit
-    public async Task ShowAsync(LeaveTypeList? data = null)
+    public Task ShowAsync(LeaveTypeList? data = null)
     {
-        var paging = new BasePaging { Start = 0, Length = 1000 };
-        leaveTypes = (await LeaveTypeService.LeaveTypeListAsync(paging)).Result ?? new();
-
         currentId = data?.Id ?? 0;
         typeName = data?.TypeName ?? string.Empty;
-        requiresAttachment = data.RequiresAttachment;
+        requiresAttachment = data?.RequiresAttachment ?? false;
 
-        modalTitle = leaveTypes is null ? "Add Leave Type" : "Edit Leave Type";
+        modalTitle = data is null ? "Add Leave Type" : "Edit Leave Type";
         errorMessage = string.Empty;
         IsVisible = true;
 
         // Notify the component to re-render and display the modal
         StateHasChanged();
+
+        return Task.CompletedTask;
     }
 
     // Validate and submit the form data to the service
     private async Task SubmitFormAsync()
     {
-        if (string.IsNullOrWhiteSpace(typeName) || string.IsNullOrWhiteSpace(requiresAttachment))
+        if (string.IsNullOrWhiteSpace(typeName))
         {
-            errorMessage = "Type name and requires attachment are required";
+            errorMessage = "Type name is required.";
             return;
         }
 
-        // Call the appropriate service method based on whether we are adding or editing an employee
+        // Call the appropriate service method based on whether we are adding or editing an leave type
         var response = currentId == 0
             ? await LeaveTypeService.CreateLeaveTypeAsync(new CreateLeaveType
             {
