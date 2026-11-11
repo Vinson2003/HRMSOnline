@@ -1,5 +1,196 @@
-﻿<h3>LeaveType</h3>
+﻿@page "/leavetype"
+@using HRMS.Components.Shared
+@using HRMS.LIB
+@using HRMS.Service.Base
+@using HRMS.Service.Interface
+@using HRMS.Service.Models
+@rendermode InteractiveServer
+@inject ILeaveTypeService LeaveTypeService
+@inject IJSRuntime JS
+
+<PageTitle>Leave Type</PageTitle>
+
+<h3>LeaveType</h3>
+
+<div class="mt-2">
+    <h4>Master Employee</h4>
+
+    <div class="d-flex justify-content-between align-items-center mb-3 mt-2">
+
+        @* <div class="w-25">
+            <input type="text" class="form-control" placeholder="Search Employee..."
+                   @bind="searchName" @bind:event="oninput" @onkeyup="SearchAsync" />
+        </div> *@
+
+        <div>
+            <button class="btn btn-primary" @onclick="OpenAddModal">Add Lrave Type</button>
+        </div>
+    </div>
+
+    <table class="table table-striped table-bordered table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th>No</th>
+                <th>Type Name</th>
+                <th>Requires Attachment</th>
+                <th>Created</th>
+                <th class="text-center w-25">Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            @* Always check for null or empty collections before iterating to prevent NullReferenceException rendering errors. *@
+            @if (leaveTypeList != null && leaveTypeList.Any())
+            {
+                @* Generate table rows for each employee in the list *@
+                @foreach (var (data, index) in leaveTypeList.Select((e, i) => (e, i)))
+                {
+                    <tr>
+                        <td>@(paging.Start + index + 1)</td>
+                        <td>@data.TypeName</td>
+                        <td>@data.RequiresAttachment</td>
+                        <td>@data.Created</td>
+                        <td class="text-center">
+                            <button class="btn btn-sm btn-warning me-2" @onclick="() => OpenEditModal(data)">Edit</button>
+                            <button class="btn btn-sm btn-danger" @onclick="() => DeleteLeaveTypeAsync(data.Id)">Delete</button>
+                        </td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="6" class="text-center">Data not found....</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    <!-- Navigasi Pagination Bootstrap -->
+    <div class="d-flex justify-content-between align-items-center mt-3">
+        <div>
+            Show Data @(TotalData == 0 ? 0 : paging.Start + 1) hingga @Math.Min(paging.Start + paging.Length, TotalData) dari total @TotalData Leave Type.
+        </div>
+        <nav>
+            <ul class="pagination mb-0">
+                <li class="page-item @(CurrentPage == 1 ? "disabled" : "")">
+                    <button class="page-link" @onclick="PreviousPageAsync">Previous</button>
+                </li>
+
+                @for (int i = 1; i <= TotalPages; i++)
+                {
+                    int pageNumber = i;
+                    <li class="page-item @(CurrentPage == pageNumber ? "active" : "")">
+                        <button class="page-link" @onclick="() => GoToPageAsync(pageNumber)">@pageNumber</button>
+                    </li>
+                }
+
+                <li class="page-item @(CurrentPage >= TotalPages ? "disabled" : "")">
+                    <button class="page-link" @onclick="NextPageAsync">Next</button>
+                </li>
+            </ul>
+        </nav>
+    </div>
+</div>
+
+<LeaveTypeModal @ref="modalRef" OnSaveSuccess="LoadDataAsync" />
 
 @code {
+    // @ref binds this variable directly to the child modal component instance
+    private LeaveTypeModal modalRef = null!;
 
+    private List<LeaveTypeList> leaveTypeList = new();
+    private string searchName = string.Empty;
+    private BasePaging paging = new BasePaging { Start = 0, Length = 10, Column = "Id", SortBy = Const.PAGING_SORT_ASC };
+
+    private int TotalData = 0;
+
+    // Calculate TotalPages dynamically based on TotalData and page Length
+    private int TotalPages => (int)Math.Ceiling((double)TotalData / paging.Length);
+
+    // Calculate current active page index (1-based)
+    private int CurrentPage => (paging.Start / paging.Length) + 1;
+
+    // Blazor lifecycle method. OnInitialized is called when the component is first created and ready to fetch data.
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync();
+    }
+
+    // This method is called when the user types in the search input.
+    // It resets the paging to the first page and reloads the data based on the search term.
+    private async Task SearchAsync()
+    {
+        paging.Start = 0;
+        await LoadDataAsync();
+    }
+
+    private async Task LoadDataAsync()
+    {
+        var response = await LeaveTypeService.LeaveTypeListAsync(paging);
+
+        leaveTypeList = response.Result ?? [];
+        TotalData = response.Total;
+
+        // If the current page has no data and it's not the first page, go back one page and reload data
+        if (!leaveTypeList.Any() && paging.Start > 0)
+        {
+            paging.Start -= paging.Length;
+            await LoadDataAsync();
+        }
+    }
+
+    private async Task OpenAddModal()
+    {
+        await modalRef.ShowAsync();
+    }
+
+    private async Task OpenEditModal(LeaveTypeList data)
+    {
+        await modalRef.ShowAsync(data);
+    }
+
+    private async Task DeleteLeaveTypeAsync(int id)
+    {
+        var confirmed = await JS.InvokeAsync<bool>("confirm", $"Are you sure you want to delete leave type ?");
+        if (!confirmed)
+        {
+            return;
+        }
+
+        var response = await LeaveTypeService.DeleteLeaveTypeAsync(id);
+        if (response.Result)
+        {
+            await LoadDataAsync();
+            return;
+        }
+
+        await JS.InvokeVoidAsync("alert", response.Message);
+    }
+
+    private async Task PreviousPageAsync()
+    {
+        if (CurrentPage <= 1)
+        {
+            return;
+        }
+
+        paging.Start -= paging.Length;
+        await LoadDataAsync();
+    }
+
+    private async Task NextPageAsync()
+    {
+        if (CurrentPage >= TotalPages)
+        {
+            return;
+        }
+
+        paging.Start += paging.Length;
+        await LoadDataAsync();
+    }
+
+    private async Task GoToPageAsync(int pageNumber)
+    {
+        paging.Start = (pageNumber - 1) * paging.Length;
+        await LoadDataAsync();
+    }
 }

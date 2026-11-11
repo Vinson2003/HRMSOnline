@@ -1,0 +1,122 @@
+﻿@using HRMS.Service.Base
+@using HRMS.Service.Interface
+@using HRMS.Service.Models
+@inject ILeaveTypeService LeaveTypeService
+
+@if (IsVisible)
+{
+    <!-- Backdrop div creates the dark background overlay behind the Bootstrap modal -->
+    <div class="modal-backdrop fade show"></div>
+}
+
+<div class="modal fade @(IsVisible ? "show d-block" : "")" tabindex="1" role="dialog" data-bs-backdrop="static">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title">@modalTitle</h5>
+            </div>
+
+            <div class="modal-body">
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <div class="alert alert-danger mb-3">@errorMessage</div>
+                }
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Type Name</label>
+                    <input type="text" class="form-control" maxlength="50" @bind="typeName" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Require Attachment</label>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" value="" id="checkDefault" checked />
+                        <label class="form-check-label" for="checkDefault">No</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" value="" id="checkLeaveType" checked />
+                        <label class="form-check-label" for="checkLeaveType">Yes</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" @onclick="CloseModal">Cancel</button>
+                <button type="button" class="btn btn-primary" @onclick="SubmitFormAsync">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public EventCallback OnSaveSuccess { get; set; }
+
+    private List<LeaveTypeList> leaveTypes = new();
+
+    private bool IsVisible;
+    private string errorMessage = string.Empty;
+    private string modalTitle = "Add Leave Type";
+
+    private int currentId;
+    private string typeName = string.Empty;
+    private bool requiresAttachment;
+
+    public void CloseModal()
+    {
+        IsVisible = false;
+        StateHasChanged();
+    }
+
+    // leaveType == null -> Add, otherwise Edit
+    public async Task ShowAsync(LeaveTypeList? data = null)
+    {
+        var paging = new BasePaging { Start = 0, Length = 1000 };
+        leaveTypes = (await LeaveTypeService.LeaveTypeListAsync(paging)).Result ?? new();
+
+        currentId = data?.Id ?? 0;
+        typeName = data?.TypeName ?? string.Empty;
+        requiresAttachment = data.RequiresAttachment;
+
+        modalTitle = leaveTypes is null ? "Add Leave Type" : "Edit Leave Type";
+        errorMessage = string.Empty;
+        IsVisible = true;
+
+        // Notify the component to re-render and display the modal
+        StateHasChanged();
+    }
+
+    // Validate and submit the form data to the service
+    private async Task SubmitFormAsync()
+    {
+        if (string.IsNullOrWhiteSpace(typeName) || string.IsNullOrWhiteSpace(requiresAttachment))
+        {
+            errorMessage = "Type name and requires attachment are required";
+            return;
+        }
+
+        // Call the appropriate service method based on whether we are adding or editing an employee
+        var response = currentId == 0
+            ? await LeaveTypeService.CreateLeaveTypeAsync(new CreateLeaveType
+            {
+                TypeName = typeName,
+                RequiresAttachment = requiresAttachment,
+            })
+            : await LeaveTypeService.UpdateLeaveTypeAsync(new UpdateLeaveType
+            {
+                Id = currentId,
+                TypeName = typeName,
+                RequiresAttachment = requiresAttachment,
+            });
+
+        if (!response.Result)
+        {
+            errorMessage = response.Message ?? "Failed to save leave type.";
+            return;
+        }
+
+        IsVisible = false;
+        // InvokeAsync: Notify the parent component that the save operation was successful
+        await OnSaveSuccess.InvokeAsync();
+    }
+}

@@ -1,5 +1,4 @@
-﻿using Azure;
-using HRMS.Data.Context;
+﻿using HRMS.Data.Context;
 using HRMS.Data.Entity;
 using HRMS.LIB;
 using HRMS.Service.Base;
