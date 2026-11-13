@@ -18,6 +18,10 @@ public partial class HRMSContext : DbContext
 
     public virtual DbSet<MstLeaveType> MstLeaveTypes { get; set; }
 
+    public virtual DbSet<MstRole> MstRoles { get; set; }
+
+    public virtual DbSet<MstUser> MstUsers { get; set; }
+
     public virtual DbSet<TrxLeaveApproval> TrxLeaveApprovals { get; set; }
 
     public virtual DbSet<TrxLeaveRequest> TrxLeaveRequests { get; set; }
@@ -85,6 +89,50 @@ public partial class HRMSContext : DbContext
                 .IsUnicode(false);
             entity.Property(e => e.Updated).HasColumnType("datetime");
             entity.Property(e => e.UpdatedBy).HasMaxLength(100);
+        });
+
+        modelBuilder.Entity<MstRole>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__Mst_Role__3214EC0722F67453");
+
+            entity.ToTable("Mst_Role");
+
+            entity.HasIndex(e => e.RoleName, "UQ__Mst_Role__8A2B61605B36DCFF").IsUnique();
+
+            entity.Property(e => e.Created).HasColumnType("datetime");
+            entity.Property(e => e.CreatedBy).HasMaxLength(100);
+            entity.Property(e => e.RoleName).HasMaxLength(50);
+            entity.Property(e => e.Updated).HasColumnType("datetime");
+            entity.Property(e => e.UpdatedBy).HasMaxLength(100);
+        });
+
+        modelBuilder.Entity<MstUser>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__Mst_User__3214EC07FA5502CD");
+
+            entity.ToTable("Mst_User");
+
+            entity.HasIndex(e => e.Username, "UQ__Mst_User__536C85E404FDF020").IsUnique();
+
+            entity.HasIndex(e => e.EmployeeId, "UQ__Mst_User__7AD04F10222758D8").IsUnique();
+
+            entity.Property(e => e.Created).HasColumnType("datetime");
+            entity.Property(e => e.CreatedBy).HasMaxLength(100);
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.PasswordHash).HasMaxLength(255);
+            entity.Property(e => e.Updated).HasColumnType("datetime");
+            entity.Property(e => e.UpdatedBy).HasMaxLength(100);
+            entity.Property(e => e.Username).HasMaxLength(50);
+
+            entity.HasOne(d => d.Employee).WithOne(p => p.MstUser)
+                .HasForeignKey<MstUser>(d => d.EmployeeId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_User_Employee");
+
+            entity.HasOne(d => d.Role).WithMany(p => p.MstUsers)
+                .HasForeignKey(d => d.RoleId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_User_Role");
         });
 
         modelBuilder.Entity<TrxLeaveApproval>(entity =>

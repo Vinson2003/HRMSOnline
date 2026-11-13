@@ -35,6 +35,8 @@ public partial class MstEmployee
 
     public virtual MstEmployee? Manager { get; set; }
 
+    public virtual MstUser? MstUser { get; set; }
+
     public virtual ICollection<TrxLeaveApproval> TrxLeaveApprovals { get; set; } = new List<TrxLeaveApproval>();
 
     public virtual ICollection<TrxLeaveRequest> TrxLeaveRequests { get; set; } = new List<TrxLeaveRequest>();

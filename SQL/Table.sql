@@ -79,3 +79,31 @@ CREATE TABLE Trx_LeaveApproval (
     CONSTRAINT FK_LeaveApproval_Approver FOREIGN KEY (ApproverId) 
         REFERENCES Mst_Employee(Id)
 );
+
+CREATE TABLE Mst_Role (
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    RoleName NVARCHAR(50) NOT NULL UNIQUE,
+    Created DATETIME NULL,
+    CreatedBy NVARCHAR(100) NULL,
+    Updated DATETIME NULL,
+    UpdatedBy NVARCHAR(100) NULL
+);
+
+CREATE TABLE Mst_User (
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    Username NVARCHAR(50) NOT NULL UNIQUE,
+    PasswordHash NVARCHAR(255) NOT NULL,
+    EmployeeId INT NOT NULL UNIQUE,
+    RoleId INT NOT NULL,
+    IsActive BIT NOT NULL DEFAULT 1,
+    Created DATETIME NULL,
+    CreatedBy NVARCHAR(100) NULL,
+    Updated DATETIME NULL,
+    UpdatedBy NVARCHAR(100) NULL,
+    IsDeleted BIT NOT NULL DEFAULT 0,
+
+    CONSTRAINT FK_User_Employee FOREIGN KEY (EmployeeId)
+        REFERENCES Mst_Employee(Id),
+    CONSTRAINT FK_User_Role FOREIGN KEY (RoleId)
+        REFERENCES Mst_Role(Id)
+);
