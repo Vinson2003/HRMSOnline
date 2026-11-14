@@ -1,12 +1,14 @@
 ﻿@page "/department"
-@using HRMS.Components.Shared
 @using HRMS.LIB
 @using HRMS.Service.Base
 @using HRMS.Service.Models
 @using HRMS.Service.Interface
+@using HRMS.Components.Shared
+@using Microsoft.AspNetCore.Authorization
 @rendermode InteractiveServer
 @inject IDepartmentService DepartmentService
 @inject IJSRuntime JS
+@attribute [Authorize]
 
 <PageTitle>Department Page</PageTitle>
 

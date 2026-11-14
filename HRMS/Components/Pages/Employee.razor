@@ -1,12 +1,14 @@
 ﻿@page "/employee"
-@using HRMS.Components.Shared
 @using HRMS.LIB
 @using HRMS.Service.Base
-@using HRMS.Service.Interface
 @using HRMS.Service.Models
+@using HRMS.Service.Interface
+@using HRMS.Components.Shared
+@using Microsoft.AspNetCore.Authorization
 @rendermode InteractiveServer
 @inject IEmployeeService EmployeeService
 @inject IJSRuntime JS
+@attribute [Authorize]
 
 <PageTitle>Employee Page</PageTitle>
 

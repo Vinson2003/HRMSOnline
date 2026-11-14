@@ -1,6 +1,6 @@
-INSERT INTO Mst_Role (RoleName, Created)
+INSERT INTO Mst_Role (RoleName, Created, CreatedBy)
 VALUES
-    ('Admin', GETUTCDATE()),
-    ('HR', GETUTCDATE()),
-    ('Manager', GETUTCDATE()),
-    ('Employee', GETUTCDATE());
+    ('Admin', GETUTCDATE(), 'System'),
+    ('HR', GETUTCDATE(), 'System'),
+    ('Manager', GETUTCDATE(), 'System'),
+    ('Employee', GETUTCDATE(), 'System');
