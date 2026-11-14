@@ -1,5 +1,6 @@
 ﻿using HRMS.Data.Context;
 using HRMS.Service.Base;
+using HRMS.Service.Models;
 using HRMS.Service.Interface;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
@@ -12,11 +13,11 @@ namespace HRMS.Service.Service
         private readonly HRMSContext _context = context;
         private readonly PasswordHasher<MstUser> _passwordHasher = new();
 
-        public async Task<BaseResponse<bool>> AuthenticateAsync(string Username, string Password)
+        public async Task<BaseResponse<AuthUser>> AuthenticateAsync(string Username, string Password)
         {
-            var response = new BaseResponse<bool>();
+            var response = new BaseResponse<AuthUser>();
 
-            if (string.IsNullOrWhiteSpace(Username) || string.IsNullOrWhiteSpace(Username))
+            if (string.IsNullOrWhiteSpace(Username) || string.IsNullOrWhiteSpace(Password))
             {
                 response.Message = "Username and password are required.";
                 return response;
@@ -41,7 +42,14 @@ namespace HRMS.Service.Service
                 return response;
             }
 
-            response.Result = true;
+            response.Result = new AuthUser
+            {
+                Id = user.Id,
+                Username = user.Username,
+                EmployeeId = user.EmployeeId,
+                RoleId = user.RoleId,
+                RoleName = user.Role.RoleName,
+            };
             response.Message = "Login successful.";
             return response;
         }
