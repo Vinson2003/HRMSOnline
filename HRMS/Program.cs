@@ -1,11 +1,14 @@
 using HRMS.Components;
 using HRMS.Data.Context;
+using HRMS.Data.Entity;
 using HRMS.Service.Interface;
-using HRMS.Service.Models;
 using HRMS.Service.Service;
+using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,12 +25,15 @@ builder.Services.AddScoped<IEmployeeService, EmployeeService>();
 builder.Services.AddScoped<ILeaveTypeService, LeaveTypeService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 
+builder.Services.AddScoped<IPasswordHasher<MstUser>, PasswordHasher<MstUser>>();
+
 // Configure cookie-based authentication and session settings.
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
         options.LoginPath = "/login";
-        options.LogoutPath = "/account/logout";
+        options.LogoutPath = "/logout";
+        options.AccessDeniedPath = "/access-denied";
 
         options.Cookie.Name = "HRMSCookie";
         options.Cookie.HttpOnly = true;
@@ -69,13 +75,79 @@ app.UseAuthorization();
 // Enable antiforgery protection for supported requests.
 app.UseAntiforgery();
 
-// Map the logout endpoint and require authenticated users.
-app.MapPost("/account/logout", async (HttpContext context) =>
+// Set Login endpoint
+app.MapPost("/login", async (HttpContext context, IAuthService authService, IAntiforgery antiforgery) =>
 {
-    // Sign out the current user and redirect to the login page.
-    await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+    // Validate antiforgery token.
+    try
+    {
+        await antiforgery.ValidateRequestAsync(context);
+    }
+    catch (AntiforgeryValidationException)
+    {
+        return Results.BadRequest("Invalid antiforgery token.");
+    }
 
-    return Results.Redirect("/login");
+    var form = await context.Request.ReadFormAsync();
+
+    var username = form["Username"].ToString();
+    var password = form["Password"].ToString();
+
+    // Validate credentials through AuthService.
+    var response = await authService.AuthenticateAsync(username, password);
+
+    if (response.Result == null)
+    {
+        return Results.LocalRedirect("/login?error=invalid");
+    }
+
+    var user = response.Result;
+
+    // Create authentication claims.
+    var claims = new List<Claim>
+    {
+        new(ClaimTypes.NameIdentifier, user.Id.ToString()),
+        new(ClaimTypes.Name, user.Username)
+    };
+
+    if (!string.IsNullOrWhiteSpace(user.RoleName))
+    {
+        claims.Add(new Claim(ClaimTypes.Role, user.RoleName));
+    }
+
+    var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+
+    var principal = new ClaimsPrincipal(identity);
+
+    // Create authentication cookie.
+    await context.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal,
+        new AuthenticationProperties
+        {
+            IsPersistent = false
+        }
+    );
+
+    return Results.LocalRedirect("/");
+})
+.AllowAnonymous();
+
+// Set logout endpoint
+app.MapPost("/logout", async (HttpContext context, IAntiforgery antiforgery) =>
+{
+    try
+    {
+        await antiforgery.ValidateRequestAsync(context);
+    }
+    catch (AntiforgeryValidationException)
+    {
+        return Results.BadRequest("Invalid antiforgery token.");
+    }
+
+    await context.SignOutAsync(
+        CookieAuthenticationDefaults.AuthenticationScheme
+    );
+
+    return Results.LocalRedirect("/login");
 
 }).RequireAuthorization();
 

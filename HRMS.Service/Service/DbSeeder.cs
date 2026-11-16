@@ -3,7 +3,7 @@ using HRMS.Data.Entity;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
-namespace HRMS.Service.Models
+namespace HRMS.Service.Service
 {
     public static class DbSeeder
     {
@@ -38,7 +38,7 @@ namespace HRMS.Service.Models
             // 5. Create the user and hash the password
             var user = new MstUser
             {
-                Username = "admin",
+                Username = "Admin",
                 EmployeeId = employee.Id,
                 RoleId = role.Id,
                 IsActive = true,

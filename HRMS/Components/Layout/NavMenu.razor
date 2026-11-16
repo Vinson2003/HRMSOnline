@@ -1,4 +1,6 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
+﻿@using Microsoft.AspNetCore.Components.Authorization
+
+<div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
         <a class="navbar-brand" href="">HRMS</a>
     </div>
@@ -31,6 +33,22 @@
                 <span class="bi bi-calendar-fill" aria-hidden="true"></span> Leave Type
             </NavLink>
         </div>
+
+        <AuthorizeView>
+            <Authorized>
+                <div class="nav-item px-3">
+                    <form method="post" action="/logout">
+                        <AntiforgeryToken />
+
+                        <button type="submit" class="nav-link text-start">
+                            <span class="bi bi-box-arrow-right btn-danger" aria-hidden="true"></span>
+                            Logout
+                        </button>
+                    </form>
+                </div>
+            </Authorized>
+        </AuthorizeView>
+
     </nav>
 </div>
 
