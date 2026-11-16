@@ -19,7 +19,7 @@ builder.Services.AddRazorComponents().AddInteractiveServerComponents();
 builder.Services.AddDbContext<HRMSContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Register application services using scoped dependency injection.s
+// Register application services using scoped dependency injection.
 builder.Services.AddScoped<IDepartmentService, DepartmentService>();
 builder.Services.AddScoped<IEmployeeService, EmployeeService>();
 builder.Services.AddScoped<ILeaveTypeService, LeaveTypeService>();
@@ -76,7 +76,7 @@ app.UseAuthorization();
 app.UseAntiforgery();
 
 // Set Login endpoint
-app.MapPost("/login", async (HttpContext context, IAuthService authService, IAntiforgery antiforgery) =>
+app.MapPost("/account/login", async (HttpContext context, IAuthService authService, IAntiforgery antiforgery) =>
 {
     // Validate antiforgery token.
     try
@@ -107,7 +107,8 @@ app.MapPost("/login", async (HttpContext context, IAuthService authService, IAnt
     var claims = new List<Claim>
     {
         new(ClaimTypes.NameIdentifier, user.Id.ToString()),
-        new(ClaimTypes.Name, user.Username)
+        new(ClaimTypes.Name, user.Username),
+        new("EmployeeId", user.EmployeeId.ToString())
     };
 
     if (!string.IsNullOrWhiteSpace(user.RoleName))
@@ -132,7 +133,7 @@ app.MapPost("/login", async (HttpContext context, IAuthService authService, IAnt
 .AllowAnonymous();
 
 // Set logout endpoint
-app.MapPost("/logout", async (HttpContext context, IAntiforgery antiforgery) =>
+app.MapPost("/account/logout", async (HttpContext context, IAntiforgery antiforgery) =>
 {
     try
     {
@@ -143,9 +144,7 @@ app.MapPost("/logout", async (HttpContext context, IAntiforgery antiforgery) =>
         return Results.BadRequest("Invalid antiforgery token.");
     }
 
-    await context.SignOutAsync(
-        CookieAuthenticationDefaults.AuthenticationScheme
-    );
+    await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
 
     return Results.LocalRedirect("/login");
 

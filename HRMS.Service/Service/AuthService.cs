@@ -19,6 +19,7 @@ namespace HRMS.Service.Service
         {
             var response = new BaseResponse<AuthUser>();
 
+            // Check login if username or password blank
             if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
             {
                 response.Message = "Username and Password are required.";
@@ -27,6 +28,7 @@ namespace HRMS.Service.Service
 
             username = username.Trim();
 
+            // Check username account active and valid or not 
             var user = await _context.MstUsers.Include(u => u.Role)
                 .FirstOrDefaultAsync(u => u.Username == username && u.IsActive && !u.IsDeleted);
 
@@ -36,6 +38,7 @@ namespace HRMS.Service.Service
                 return response;
             }
 
+            // Check password hash valid or not 
             var result = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, password);
 
             if (result == PasswordVerificationResult.Failed)
@@ -52,6 +55,7 @@ namespace HRMS.Service.Service
                 await _context.SaveChangesAsync();
             }
 
+            // Send user data to claims
             response.Result = new AuthUser
             {
                 Id = user.Id,

@@ -37,11 +37,11 @@
         <AuthorizeView>
             <Authorized>
                 <div class="nav-item px-3">
-                    <form method="post" action="/logout">
+                    <form method="post" action="/account/logout">
                         <AntiforgeryToken />
 
                         <button type="submit" class="nav-link text-start">
-                            <span class="bi bi-box-arrow-right btn-danger" aria-hidden="true"></span>
+                            <span class="bi bi-box-arrow-right" aria-hidden="true"></span>
                             Logout
                         </button>
                     </form>
