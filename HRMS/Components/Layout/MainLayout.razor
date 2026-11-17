@@ -7,6 +7,12 @@
 
     <main>
         <div class="top-row px-4">
+            <form method="post" action="/account/logout">
+                <AntiforgeryToken />
+                
+                <button type="submit" class="btn btn-sm btn-danger">Logout</button>
+            </form>
+
             <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
         </div>
 
