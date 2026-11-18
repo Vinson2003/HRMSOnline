@@ -1,0 +1,194 @@
+﻿@page "/user"
+@using HRMS.LIB;
+@using HRMS.Service.Base
+@using HRMS.Service.Models
+@using HRMS.Service.Interface
+@using HRMS.Components.Shared
+@using Microsoft.AspNetCore.Authorization
+@rendermode InteractiveServer
+@inject IUserService UserService
+@inject IJSRuntime JS
+@attribute [Authorize(Roles = "Admin")]
+
+<PageTitle>Account Page</PageTitle>
+
+<div class="mt-2">
+    <h4>User Management</h4>
+
+    <div class="d-flex justify-content-between align-items-center mb-3 mt-2">
+
+        <div class="w-25">
+            <input type="text" class="form-control" placeholder="Search User..." @bind="searchName" @bind:event="oninput" @onkeyup="SearchAsync" />
+        </div>
+
+        <div>
+            <button class="btn btn-primary" @onclick="OpenAddModal">Add User</button> 
+        </div>
+    </div>
+
+    <table class="table table-striped table-bordered hover">
+        <thead class="table-dark">
+            <tr>
+                <th>Username</th>
+                <th>Employee</th>
+                <th>Role</th>
+                <th>IsActive</th>
+                <th>Created</th>
+                <th class="text-center w-25">Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            @* Always check for null or empty collections before iterating to prevent NullReferenceException rendering errors. *@
+            @if (userList != null && userList.Any())
+            {
+                @* Generate table rows for each employee in the list *@
+                @foreach (var (acc, index) in userList.Select((e, i) => (e, i)))
+                {
+                    <tr>
+                        <td>@acc.Username</td>
+                        <td>@acc.FullName</td>
+                        <td>@acc.RoleName</td>
+                        <td>@acc.IsActive</td>
+                        <td>@acc.Created</td>
+                        <td class="text-center">
+                            <button class="btn btn-sm btn-info me-2" @onclick="() => ChangePasswordUser(acc)">Change Password</button> 
+                            <button class="btn btn-sm btn-warning me-2" @onclick="() => OpenEditModal(acc)">Edit</button>
+                            <button class="btn btn-sm btn-danger" @onclick="() => DeleteAccountAsync(acc.Id, acc.Username)">Delete</button> 
+                        </td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="6" class="text-center">Data not found....</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <!-- Navigasi Pagination Bootstrap -->
+    <div class="d-flex justify-content-between align-items-center mt-3">
+        <div>
+            Showing data @(TotalData == 0 ? 0 : paging.Start + 1) to @Math.Min(paging.Start + paging.Length, TotalData) out of a total of @TotalData users.
+        </div>
+        <nav>
+            <ul class="pagination mb-0">
+                <li class="page-item @(CurrentPage == 1 ? "disabled" : "")">
+                    <button class="page-link" @onclick="PreviousPageAsync">Previous</button>
+                </li>
+
+                @for (int i = 1; i <= TotalPages; i++)
+                {
+                    int pageNumber = i;
+                    <li class="page-item @(CurrentPage == pageNumber ? "active" : "")">
+                        <button class="page-link" @onclick="() => GoToPageAsync(pageNumber)">@pageNumber</button>
+                    </li>
+                }
+
+                <li class="page-item @(CurrentPage >= TotalPages ? "disabled" : "")">
+                    <button class="page-link" @onclick="NextPageAsync">Next</button>
+                </li>
+            </ul>
+        </nav>
+    </div>
+</div>
+
+<UserModal @ref="modalRef" OnSaveSuccess="LoadDataAsync" /> 
+
+@code {
+    private UserModal modalRef = null!;
+
+    private List<UserList> userList = new();
+    private string searchName = string.Empty;
+    private BasePaging paging = new BasePaging { Start = 0, Length = 10, Column = "Id", SortBy = Const.PAGING_SORT_ASC };
+
+    private int TotalData = 0;
+
+    private int TotalPages => (int)Math.Ceiling((double)TotalData / paging.Length);
+
+    private int CurrentPage => (paging.Start / paging.Length) + 1;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync();
+    }
+
+    private async Task SearchAsync()
+    {
+        paging.Start = 0;
+        await LoadDataAsync();
+    }
+
+    private async Task LoadDataAsync()
+    {
+        var response = await UserService.UserListAsync(paging, searchName);
+
+        userList = response.Result ?? [];
+        TotalData = response.Total;
+
+        if (!userList.Any() && paging.Start > 0)
+        {
+            paging.Start -= paging.Length;
+            await LoadDataAsync();
+        }
+    }
+
+    private async Task OpenAddModal()
+    {
+        await modalRef.ShowAsync();
+    }
+
+    private async Task OpenEditModal(UserList user)
+    {
+        await modalRef.ShowAsync(user);
+    }
+
+    private async Task DeleteAccountAsync(int id, string? name)
+    {
+        var confirmed = await JS.InvokeAsync<bool>("confirm", $"Are you sure you want to delete this account '{name}'?");
+
+        if (!confirmed)
+        {
+            return;
+        }
+
+        var response = await UserService.DeleteUserAsync(id);
+
+        if (response.Result)
+        {
+            await LoadDataAsync();
+            return;
+        }
+
+        await JS.InvokeVoidAsync("alert", response.Message);
+    }
+
+    private async Task PreviousPageAsync()
+    {
+        if (CurrentPage <= 1)
+        {
+            return;
+        }
+
+        paging.Start -= paging.Length;
+        await LoadDataAsync();
+    }
+
+    private async Task NextPageAsync()
+    {
+        if (CurrentPage >= TotalPages)
+        {
+            return;
+        }
+
+        paging.Start += paging.Length;
+        await LoadDataAsync();
+    }
+
+    private async Task GoToPageAsync(int pageNumber)
+    {
+        paging.Start = (pageNumber - 1) * paging.Length;
+        await LoadDataAsync();
+    }
+}
