@@ -86,7 +86,8 @@ CREATE TABLE Mst_Role (
     Created DATETIME NULL,
     CreatedBy NVARCHAR(100) NULL,
     Updated DATETIME NULL,
-    UpdatedBy NVARCHAR(100) NULL
+    UpdatedBy NVARCHAR(100) NULL,
+    IsDeleted BIT NOT NULL DEFAULT 0
 );
 
 CREATE TABLE Mst_User (

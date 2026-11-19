@@ -1,5 +1,151 @@
-﻿<h3>UserModal</h3>
+﻿@using HRMS.Service.Base
+@using HRMS.Service.Interface
+@using HRMS.Service.Models
+@inject IUserService UserService
+@inject IEmployeeService EmployeeService
+@inject IRoleService RoleService
+
+@if (IsVisible)
+{
+    <!-- Backdrop div creates the dark background overlay behind the Bootstrap modal -->
+    <div class="modal-backdrop fade show"></div>
+}
+
+<div class="modal fade @(IsVisible ? "show d-block" : "")" tabindex="1" role="dialog" data-bs-backdrop="static">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">@modalTitle</h5>
+            </div>
+            <div class="modal-body">
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <div class="alert alert-danger mb-3">@errorMessage</div>
+                }
+
+                @if (currentId != 0)
+                {
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Username</label>
+                        <input type="text" class="form-control" maxlength="150" @bind="userName" />
+                    </div>
+                }
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Password</label>
+                    <input type="password" class="form-control" maxlength="50" @bind="password" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Confirm Password</label>
+                    <input type="password" class="form-control" maxlength="50" @bind="confirmPassword" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Employee</label>
+                    <select class="form-select" @bind="employeeId">
+                        <option value="0">-- Select employee --</option>
+                        @foreach (var d in employee)
+                        {
+                            <option value="@d.Id">@d.FullName</option>
+                        }
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Role</label>
+                    <select class="form-select" @bind="roleId">
+                        <option value="0">-- Select role --</option>
+                        @foreach (var d in roles)
+                        {
+                            <option value="@d.Id">@d.RoleName</option>
+                        }
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" @onclick="CloseModal">Cancel</button>
+                <button type="button" class="btn btn-primary" @onclick="SubmitFormAsync">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 @code {
+    [Parameter]
+    public EventCallback OnSaveSuccess { get; set; }
 
+    private List<EmployeeList> employee = new();
+    private List<RoleList> roles = new();
+
+    private bool IsVisible;
+    private string errorMessage = string.Empty;
+    private string modalTitle = "Add User";
+
+    private int currentId;
+    private string userName = string.Empty;
+    private string password = string.Empty;
+    private string confirmPassword = string.Empty;
+    private int employeeId;
+    private int roleId;
+
+    public void CloseModal()
+    {
+        IsVisible = false;
+        StateHasChanged();
+    }
+
+    // user == null -> Add, otherwise Edit
+    public async Task ShowAsync(UserList? user = null)
+    {
+        var paging = new BasePaging { Start = 0, Length = 1000 };
+        employee = (await EmployeeService.EmployeeListAsync(paging, string.Empty)).Result ?? new();
+        roles = (await RoleService.RoleListAsync(paging, string.Empty)).Result ?? new();
+
+        currentId = user?.Id ?? 0;
+        userName = user?.Username ?? string.Empty;
+        password = user?.Password ?? string.Empty;
+        confirmPassword = user?.ConfirmPassword ?? string.Empty;
+        employeeId = user?.EmployeeId ?? 0;
+        roleId = user?.RoleId ?? 0;
+
+        modalTitle = user is null ? "Add User" : "Edit User";
+        errorMessage = string.Empty;
+        IsVisible = true;
+
+        // Notify the component to re-render and display the modal
+        StateHasChanged();
+    }
+
+    // Validate and submit the form data to the service
+    private async Task SubmitFormAsync()
+    {
+        if (string.IsNullOrWhiteSpace(userName) || string.IsNullOrWhiteSpace(password) || string.IsNullOrWhiteSpace(confirmPassword))
+        {
+            errorMessage = "Username, password and confirm password are required.";
+            return;
+        }
+
+        var response = currentId == 0 && employeeId == 0 && roleId == 0
+            ? await UserService.CreateUserAsync(new CreateUser
+            {
+                Username = userName,
+                Password = password,
+                ConfirmPassword = confirmPassword,
+                EmployeeId = employeeId,
+                RoleId = roleId,
+            })
+            : await UserService.UpdateUserAsync(new UpdateUser
+            {
+                Id = currentId,
+                Username = userName,
+                RoleId = roleId
+            });
+
+        if (!response.Result)
+        {
+            errorMessage = response.Message ?? "Failed to save user.";
+            return;
+        }
+
+        IsVisible = false;
+        // InvokeAsync: Notify the parent component that the save operation was successful
+        await OnSaveSuccess.InvokeAsync();
+    }
 }

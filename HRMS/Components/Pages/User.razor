@@ -48,10 +48,10 @@
                         <td>@acc.Username</td>
                         <td>@acc.FullName</td>
                         <td>@acc.RoleName</td>
-                        <td>@acc.IsActive</td>
+                        <td>@(acc.IsActive ? "Yes" : "No")</td>
                         <td>@acc.Created</td>
                         <td class="text-center">
-                            <button class="btn btn-sm btn-info me-2" @onclick="() => ChangePasswordUser(acc)">Change Password</button> 
+                            <button class="btn btn-sm btn-info me-2" @onclick="() => ChangePasswordUser(acc.Id, acc.Password)">Change Password</button>  
                             <button class="btn btn-sm btn-warning me-2" @onclick="() => OpenEditModal(acc)">Edit</button>
                             <button class="btn btn-sm btn-danger" @onclick="() => DeleteAccountAsync(acc.Id, acc.Username)">Delete</button> 
                         </td>

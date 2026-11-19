@@ -17,5 +17,7 @@ public partial class MstRole
 
     public string? UpdatedBy { get; set; }
 
+    public bool IsDeleted { get; set; }
+
     public virtual ICollection<MstUser> MstUsers { get; set; } = new List<MstUser>();
 }

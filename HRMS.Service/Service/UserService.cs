@@ -1,12 +1,13 @@
-﻿using HRMS.Data.Context;
+﻿using Azure.Core;
+using HRMS.Data.Context;
+using HRMS.Data.Entity;
 using HRMS.LIB;
 using HRMS.Service.Base;
 using HRMS.Service.Interface;
 using HRMS.Service.Models;
-using System.Linq.Expressions;
-using Microsoft.EntityFrameworkCore;
-using HRMS.Data.Entity;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
 
 namespace HRMS.Service.Service
 {
@@ -121,7 +122,7 @@ namespace HRMS.Service.Service
                 return response;
             }
 
-            if (!await _context.MstUsers.AnyAsync(d => d.Id == request.EmployeeId))
+            if (await _context.MstUsers.AnyAsync(d => d.EmployeeId == request.EmployeeId))
             {
                 response.Result = false;
                 response.Message = "This employee already has an account.";
@@ -193,7 +194,6 @@ namespace HRMS.Service.Service
                 return response;
             }
 
-            // Replace the "Role not found" AnyAsync check with this, so we also get the role name
             var newRole = await _context.MstRoles.FirstOrDefaultAsync(r => r.Id == request.RoleId);
             if (newRole == null)
             {
@@ -255,6 +255,35 @@ namespace HRMS.Service.Service
 
             response.Result = true;
             response.Message = "User deleted successful.";
+            return response;
+        }
+
+        public async Task<BaseResponse<bool>> ChangePasswordUserAsync(int Id, string changePassword)
+        {
+            var response = new BaseResponse<bool>();
+
+            var user = await _context.MstUsers.Include(u => u.Role).FirstOrDefaultAsync(u => u.Id == Id);
+
+            if (user == null || user.IsDeleted)
+            {
+                response.Result = false;
+                response.Message = "User not found";
+                return response;
+            }
+
+            var newPassword = new MstUser
+            {
+                PasswordHash = changePassword,
+                Updated = DateTime.UtcNow,
+                UpdatedBy = "System"
+            };
+
+            newPassword.PasswordHash = _passwordHasher.HashPassword(newPassword, changePassword);
+
+            await _context.SaveChangesAsync();
+
+            response.Result = true;
+            response.Message = "Change Password User Succesfull";
             return response;
         }
     }
