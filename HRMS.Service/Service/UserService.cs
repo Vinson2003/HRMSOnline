@@ -15,13 +15,19 @@ namespace HRMS.Service.Service
         private readonly HRMSContext _context = context;
         private readonly IPasswordHasher<MstUser> _passwordHasher = passwordHasher;
 
+        // Is there at least one OTHER active Admin besides this user?
+        private async Task<bool> HasOtherActiveAdminAsync(int excludeUserId)
+        {
+            return await _context.MstUsers.AnyAsync(u => u.Id != excludeUserId && !u.IsDeleted && u.IsActive && u.Role.RoleName == Const.ADMIN_ROLE);
+        }
+
         public async Task<BaseResponse<List<UserList>>> UserListAsync(BasePaging paging, string searchName)
         {
             var response = new BaseResponse<List<UserList>>();
 
             var users = _context.MstUsers
                 .Where(x => !x.IsDeleted && (string.IsNullOrWhiteSpace(searchName) || x.Username.Contains(searchName)))
-                .Select(x => new UserList
+                .Select(x => new UserList 
                 {
                     Id = x.Id,
                     Username = x.Username,
@@ -29,6 +35,7 @@ namespace HRMS.Service.Service
                     FullName = x.Employee.FullName,
                     RoleId = x.RoleId,
                     RoleName = x.Role.RoleName,
+                    IsActive = x.IsActive,
                     Created = x.Created,
                 });
 
@@ -40,7 +47,8 @@ namespace HRMS.Service.Service
                 ["EmployeeId"] = users => users.EmployeeId,
                 ["FullName"] = users => users.FullName,
                 ["RoleId"] = users => users.RoleId,
-                ["ManagerName"] = users => users.RoleName,
+                ["RoleName"] = users => users.RoleName,
+                ["IsActive"] = users => users.IsActive,
                 ["Created"] = users => users.Created,
             };
 
@@ -113,6 +121,13 @@ namespace HRMS.Service.Service
                 return response;
             }
 
+            if (!await _context.MstUsers.AnyAsync(d => d.Id == request.EmployeeId))
+            {
+                response.Result = false;
+                response.Message = "This employee already has an account.";
+                return response;
+            }
+
             if (!await _context.MstRoles.AnyAsync(d => d.Id == request.RoleId))
             {
                 response.Result = false;
@@ -146,7 +161,7 @@ namespace HRMS.Service.Service
         {
             var response = new BaseResponse<bool>();
 
-            var user = await _context.MstUsers.FindAsync(request.Id);
+            var user = await _context.MstUsers.Include(u => u.Role).FirstOrDefaultAsync(u => u.Id == request.Id);
 
             if (user == null || user.IsDeleted)
             {
@@ -158,7 +173,7 @@ namespace HRMS.Service.Service
             if (string.IsNullOrWhiteSpace(request.Username))
             {
                 response.Result = false;
-                response.Message = "Username are required.";
+                response.Message = "Username is required.";
                 return response;
             }
 
@@ -171,17 +186,30 @@ namespace HRMS.Service.Service
                 return response;
             }
 
-            if (await _context.MstUsers.AnyAsync(e => e.Username == username || e.Id != request.Id))
+            if (await _context.MstUsers.AnyAsync(e => e.Username == username && e.Id != request.Id))
             {
                 response.Result = false;
                 response.Message = "Username already exists.";
                 return response;
             }
 
-            if (!await _context.MstRoles.AnyAsync(d => d.Id == request.RoleId))
+            // Replace the "Role not found" AnyAsync check with this, so we also get the role name
+            var newRole = await _context.MstRoles.FirstOrDefaultAsync(r => r.Id == request.RoleId);
+            if (newRole == null)
             {
                 response.Result = false;
                 response.Message = "Role not found.";
+                return response;
+            }
+
+            // Last Admin rule
+            var isActiveAdminNow = user.IsActive && user.Role.RoleName == Const.ADMIN_ROLE;
+            var willStayActiveAdmin = request.IsActive && newRole.RoleName == Const.ADMIN_ROLE;
+
+            if (isActiveAdminNow && !willStayActiveAdmin && !await HasOtherActiveAdminAsync(user.Id))
+            {
+                response.Result = false;
+                response.Message = "Cannot change: this is the last active Admin.";
                 return response;
             }
 
@@ -202,11 +230,20 @@ namespace HRMS.Service.Service
         {
             var response = new BaseResponse<bool>();
 
-            var user = await _context.MstUsers.FindAsync(userId);
+            var user = await _context.MstUsers.Include(u => u.Role).FirstOrDefaultAsync(u => u.Id == userId);
+
             if (user == null || user.IsDeleted)
             {
                 response.Result = false;
                 response.Message = "User not found.";
+                return response;
+            }
+
+            // Last Admin rule: an active Admin can only be deleted if another active Admin exists
+            if (user.IsActive && user.Role.RoleName == Const.ADMIN_ROLE && !await HasOtherActiveAdminAsync(user.Id))
+            {
+                response.Result = false;
+                response.Message = "Cannot delete: this is the last active Admin.";
                 return response;
             }
 
