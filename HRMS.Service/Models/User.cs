@@ -12,10 +12,6 @@ namespace HRMS.Service.Models
 
         public int EmployeeId { get; set; } 
 
-        public string Password { get; set; } = null!;
-
-        public string ConfirmPassword { get; set; } = null!;
-
         public string FullName { get; set; } = null!;
 
         public int RoleId { get; set; }

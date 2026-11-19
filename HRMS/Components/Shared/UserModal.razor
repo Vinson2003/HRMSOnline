@@ -23,31 +23,43 @@
                     <div class="alert alert-danger mb-3">@errorMessage</div>
                 }
 
-                @if (currentId != 0)
+                @* Username is shown for both Add and Edit *@
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Username</label>
+                    <input type="text" class="form-control" maxlength="50" @bind="userName" />
+                </div>
+
+                @if (currentId == 0)
                 {
+                    @* Add mode: password fields and employee dropdown *@
                     <div class="mb-3">
-                        <label class="form-label fw-bold">Username</label>
-                        <input type="text" class="form-control" maxlength="150" @bind="userName" />
+                        <label class="form-label fw-bold">Password</label>
+                        <input type="password" class="form-control" maxlength="50" @bind="password" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Confirm Password</label>
+                        <input type="password" class="form-control" maxlength="50" @bind="confirmPassword" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Employee</label>
+                        <select class="form-select" @bind="employeeId">
+                            <option value="0">-- Select employee --</option>
+                            @foreach (var d in employee)
+                            {
+                                <option value="@d.Id">@d.FullName</option>
+                            }
+                        </select>
                     </div>
                 }
-                <div class="mb-3">
-                    <label class="form-label fw-bold">Password</label>
-                    <input type="password" class="form-control" maxlength="50" @bind="password" />
-                </div>
-                <div class="mb-3">
-                    <label class="form-label fw-bold">Confirm Password</label>
-                    <input type="password" class="form-control" maxlength="50" @bind="confirmPassword" />
-                </div>
-                <div class="mb-3">
-                    <label class="form-label fw-bold">Employee</label>
-                    <select class="form-select" @bind="employeeId">
-                        <option value="0">-- Select employee --</option>
-                        @foreach (var d in employee)
-                        {
-                            <option value="@d.Id">@d.FullName</option>
-                        }
-                    </select>
-                </div>
+                else
+                {
+                    @* Edit mode: the employee cannot be changed, so it is read-only *@
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Employee</label>
+                        <input type="text" class="form-control" value="@employeeName" readonly />
+                    </div>
+                }
+
                 <div class="mb-3">
                     <label class="form-label fw-bold">Role</label>
                     <select class="form-select" @bind="roleId">
@@ -57,6 +69,13 @@
                             <option value="@d.Id">@d.RoleName</option>
                         }
                     </select>
+                </div>
+
+                <div class="mb-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="isActive" @bind="isActive" />
+                        <label class="form-check-label" for="isActive">Active</label>
+                    </div>
                 </div>
             </div>
             <div class="modal-footer">
@@ -83,7 +102,9 @@
     private string password = string.Empty;
     private string confirmPassword = string.Empty;
     private int employeeId;
+    private string employeeName = string.Empty;
     private int roleId;
+    private bool isActive = true;
 
     public void CloseModal()
     {
@@ -96,14 +117,16 @@
     {
         var paging = new BasePaging { Start = 0, Length = 1000 };
         employee = (await EmployeeService.EmployeeListAsync(paging, string.Empty)).Result ?? new();
-        roles = (await RoleService.RoleListAsync(paging, string.Empty)).Result ?? new();
+        roles = (await RoleService.RoleListAsync(paging)).Result ?? new();
 
         currentId = user?.Id ?? 0;
         userName = user?.Username ?? string.Empty;
-        password = user?.Password ?? string.Empty;
-        confirmPassword = user?.ConfirmPassword ?? string.Empty;
+        password = string.Empty;
+        confirmPassword = string.Empty;
         employeeId = user?.EmployeeId ?? 0;
+        employeeName = user?.FullName ?? string.Empty;
         roleId = user?.RoleId ?? 0;
+        isActive = user?.IsActive ?? true;
 
         modalTitle = user is null ? "Add User" : "Edit User";
         errorMessage = string.Empty;
@@ -116,13 +139,36 @@
     // Validate and submit the form data to the service
     private async Task SubmitFormAsync()
     {
-        if (string.IsNullOrWhiteSpace(userName) || string.IsNullOrWhiteSpace(password) || string.IsNullOrWhiteSpace(confirmPassword))
+        var isAdd = currentId == 0;
+
+        if (string.IsNullOrWhiteSpace(userName))
         {
-            errorMessage = "Username, password and confirm password are required.";
+            errorMessage = "Username is required.";
             return;
         }
 
-        var response = currentId == 0 && employeeId == 0 && roleId == 0
+        if (roleId == 0)
+        {
+            errorMessage = "Please select a role.";
+            return;
+        }
+
+        if (isAdd)
+        {
+            if (string.IsNullOrWhiteSpace(password) || string.IsNullOrWhiteSpace(confirmPassword))
+            {
+                errorMessage = "Password and confirm password are required.";
+                return;
+            }
+
+            if (employeeId == 0)
+            {
+                errorMessage = "Please select an employee.";
+                return;
+            }
+        }
+
+        var response = isAdd
             ? await UserService.CreateUserAsync(new CreateUser
             {
                 Username = userName,
@@ -130,12 +176,14 @@
                 ConfirmPassword = confirmPassword,
                 EmployeeId = employeeId,
                 RoleId = roleId,
+                IsActive = isActive
             })
             : await UserService.UpdateUserAsync(new UpdateUser
             {
                 Id = currentId,
                 Username = userName,
-                RoleId = roleId
+                RoleId = roleId,
+                IsActive = isActive
             });
 
         if (!response.Result)
@@ -145,7 +193,7 @@
         }
 
         IsVisible = false;
-        // InvokeAsync: Notify the parent component that the save operation was successful
+        // Notify the parent component that the save operation was successful
         await OnSaveSuccess.InvokeAsync();
     }
 }
