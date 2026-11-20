@@ -1,0 +1,94 @@
+﻿@using HRMS.Service.Interface
+@using HRMS.Service.Models
+@inject IRoleService RoleService
+
+@if (IsVisible)
+{
+    <!-- Backdrop div creates the dark background overlay behind the Bootstrap modal -->
+    <div class="modal-backdrop fade show"></div>
+}
+
+<div class="modal fade @(IsVisible ? "show d-block" : "")" tabindex="1" role="dialog" data-bs-backdrop="static">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">@modalTitle</h5>
+            </div>
+            <div class="modal-body">
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <div class="alert alert-danger mb-3">@errorMessage</div>
+                }
+                <div class="mb-3">
+                    <label class="form-label fw-bold">RoleName</label>
+                    <input type="text" class="form-control" maxlength="50" @bind="roleName" placeholder="Enter role name..." />
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" @onclick="CloseModal">Cancel</button>
+                <button type="button" class="btn btn-primary" @onclick="SubmitFormAsync">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public EventCallback OnSaveSuccess { get; set; }
+
+    private bool IsVisible = false;
+    private string errorMessage = string.Empty;
+    private string modalTitle = "Add Role";
+
+    // State properties for the form
+    private int currentId = 0;
+    private string roleName = string.Empty;
+
+    // Modified Show method to accept optional parameters.
+    // If id is 0, it acts as Create. If id > 0, it acts as Edit.
+    public void Show(int id = 0, string name = "")
+    {
+        currentId = id;
+        roleName = name;
+        modalTitle = id == 0 ? "Add Role" : "Edit Role";
+        errorMessage = string.Empty;
+        IsVisible = true;
+        StateHasChanged();
+    }
+
+    public void CloseModal()
+    {
+        IsVisible = false;
+        StateHasChanged();
+    }
+
+    private async Task SubmitFormAsync()
+    {
+        if (string.IsNullOrWhiteSpace(roleName))
+        {
+            errorMessage = "Role name cannot be empty.";
+            return;
+        }
+
+        var request = new CreateRole
+        {
+            RoleName = roleName
+        };
+
+        var response = currentId == 0 ? await RoleService.CreateRoleAsync(request)
+            : await RoleService.UpdateRoleAsync(new UpdateRole
+            {
+                Id = currentId,
+                RoleName = roleName
+            });
+
+        if (!response.Result)
+        {
+            errorMessage = response.Message ?? "Failed to save role.";
+            return;
+        }
+
+        IsVisible = false;
+        await OnSaveSuccess.InvokeAsync();
+    }
+}

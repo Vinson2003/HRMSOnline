@@ -15,5 +15,7 @@ namespace HRMS.Service.Interface
         Task<BaseResponse<bool>> UpdateUserAsync(UpdateUser request);
 
         Task<BaseResponse<bool>> DeleteUserAsync(int userId);
+
+        Task<BaseResponse<bool>> ChangePasswordAsync(ChangeUserPassword request);
     }
 }

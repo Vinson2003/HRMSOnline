@@ -14,4 +14,16 @@ namespace HRMS.Service.Models
 
         public string? CreatedBy { get; set; }
     }
+
+    public class CreateRole
+    {
+        public string RoleName { get; set; } = null!;
+    }
+
+    public class UpdateRole
+    {
+        public int Id { get; set; }
+
+        public string RoleName { get; set; } = null!;
+    }
 }

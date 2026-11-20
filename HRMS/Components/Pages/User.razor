@@ -10,7 +10,7 @@
 @inject IJSRuntime JS
 @attribute [Authorize(Roles = "Admin")]
 
-<PageTitle>Account Page</PageTitle>
+<PageTitle>User Page</PageTitle>
 
 <div class="mt-2">
     <h4>User Management</h4>
@@ -18,7 +18,7 @@
     <div class="d-flex justify-content-between align-items-center mb-3 mt-2">
 
         <div class="w-25">
-            <input type="text" class="form-control" placeholder="Search User..." @bind="searchName" @bind:event="oninput" @onkeyup="SearchAsync" />
+            <input type="text" class="form-control" placeholder="Search Username or Employee..." @bind="searchName" @bind:event="oninput" @onkeyup="SearchAsync" />
         </div>
 
         <div>
@@ -51,7 +51,7 @@
                         <td>@(acc.IsActive ? "Yes" : "No")</td>
                         <td>@acc.Created</td>
                         <td class="text-center">
-                            <button class="btn btn-sm btn-info me-2" @onclick="() => ChangePasswordUser(acc.Id)">Change Password</button>  
+                            <button class="btn btn-sm btn-info me-2" @onclick="() => OpenChangePasswordModal(acc)">Change Password</button>
                             <button class="btn btn-sm btn-warning me-2" @onclick="() => OpenEditModal(acc)">Edit</button>
                             <button class="btn btn-sm btn-danger" @onclick="() => DeleteAccountAsync(acc.Id, acc.Username)">Delete</button> 
                         </td>
@@ -95,12 +95,14 @@
 </div>
 
 <UserModal @ref="modalRef" OnSaveSuccess="LoadDataAsync" /> 
+<ChangePasswordModal @ref="passwordModalRef" OnSaveSuccess="OnPasswordChangedAsync" />
 
 @code {
     private UserModal modalRef = null!;
 
     private List<UserList> userList = new();
     private string searchName = string.Empty;
+    private string searchEmployeeName = string.Empty;
     private BasePaging paging = new BasePaging { Start = 0, Length = 10, Column = "Id", SortBy = Const.PAGING_SORT_ASC };
 
     private int TotalData = 0;
@@ -108,6 +110,8 @@
     private int TotalPages => (int)Math.Ceiling((double)TotalData / paging.Length);
 
     private int CurrentPage => (paging.Start / paging.Length) + 1;
+
+    private ChangePasswordModal passwordModalRef = null!;
 
     protected override async Task OnInitializedAsync()
     {
@@ -162,6 +166,16 @@
         }
 
         await JS.InvokeVoidAsync("alert", response.Message);
+    }
+
+    private void OpenChangePasswordModal(UserList user)
+    {
+        passwordModalRef.Show(user);
+    }
+
+    private async Task OnPasswordChangedAsync()
+    {
+        await JS.InvokeVoidAsync("alert", "Password changed Successfully");
     }
 
     private async Task PreviousPageAsync()

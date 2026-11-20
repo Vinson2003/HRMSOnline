@@ -65,7 +65,7 @@
     <!-- Navigasi Pagination Bootstrap -->
     <div class="d-flex justify-content-between align-items-center mt-3">
         <div>
-            Menampilkan data @(TotalData == 0 ? 0 : paging.Start + 1) hingga @Math.Min(paging.Start + paging.Length, TotalData) dari total @TotalData departemen.
+            Showing data @(TotalData == 0 ? 0 : paging.Start + 1) to @Math.Min(paging.Start + paging.Length, TotalData) out of a total of @TotalData departments.
         </div>
         <nav>
             <ul class="pagination mb-0">

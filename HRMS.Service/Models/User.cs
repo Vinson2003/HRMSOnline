@@ -50,4 +50,14 @@ namespace HRMS.Service.Models
 
         public bool IsActive { get; set; }
     }
+
+
+    public class ChangeUserPassword
+    {
+        public int Id { get; set; }
+
+        public string NewPassword { get; set; } = null!;
+
+        public string ConfirmPassword { get; set; } = null!;
+    }
 }

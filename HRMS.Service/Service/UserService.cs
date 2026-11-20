@@ -27,7 +27,8 @@ namespace HRMS.Service.Service
             var response = new BaseResponse<List<UserList>>();
 
             var users = _context.MstUsers
-                .Where(x => !x.IsDeleted && (string.IsNullOrWhiteSpace(searchName) || x.Username.Contains(searchName)))
+                .Where(x => !x.IsDeleted && (string.IsNullOrWhiteSpace(searchName) || x.Username.Contains(searchName)
+                || string.IsNullOrEmpty(searchName) || x.Employee.FullName.Contains(searchName)))
                 .Select(x => new UserList 
                 {
                     Id = x.Id,
@@ -258,32 +259,41 @@ namespace HRMS.Service.Service
             return response;
         }
 
-        public async Task<BaseResponse<bool>> ChangePasswordUserAsync(int Id, string changePassword)
+        public async Task<BaseResponse<bool>> ChangePasswordAsync(ChangeUserPassword request)
         {
             var response = new BaseResponse<bool>();
 
-            var user = await _context.MstUsers.Include(u => u.Role).FirstOrDefaultAsync(u => u.Id == Id);
-
+            var user = await _context.MstUsers.FirstOrDefaultAsync(u => u.Id == request.Id);
             if (user == null || user.IsDeleted)
             {
                 response.Result = false;
-                response.Message = "User not found";
+                response.Message = "User not found.";
                 return response;
             }
 
-            var newPassword = new MstUser
+            if (string.IsNullOrEmpty(request.NewPassword) || request.NewPassword.Length < 8)
             {
-                PasswordHash = changePassword,
-                Updated = DateTime.UtcNow,
-                UpdatedBy = "System"
-            };
+                response.Result = false;
+                response.Message = "Password must be at least 8 characters.";
+                return response;
+            }
 
-            newPassword.PasswordHash = _passwordHasher.HashPassword(newPassword, changePassword);
+            if (request.NewPassword != request.ConfirmPassword)
+            {
+                response.Result = false;
+                response.Message = "Password and confirmation do not match.";
+                return response;
+            }
+
+            // Hash the new password and store it on the REAL user
+            user.PasswordHash = _passwordHasher.HashPassword(user, request.NewPassword);
+            user.Updated = DateTime.UtcNow;
+            user.UpdatedBy = "System";
 
             await _context.SaveChangesAsync();
 
             response.Result = true;
-            response.Message = "Change Password User Succesfull";
+            response.Message = "Password changed successfully.";
             return response;
         }
     }
