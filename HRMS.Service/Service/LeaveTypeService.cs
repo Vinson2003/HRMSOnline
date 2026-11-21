@@ -5,7 +5,6 @@ using HRMS.Service.Interface;
 using HRMS.Service.Models;
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
-using Azure;
 using HRMS.Data.Entity;
 
 namespace HRMS.Service.Service

@@ -52,15 +52,6 @@ builder.Services.AddCascadingAuthenticationState();
 
 var app = builder.Build();
 
-// Seed demo accounts (only creates them if they do not exist yet)
-using (var scope = app.Services.CreateScope())
-{
-    var context = scope.ServiceProvider.GetRequiredService<HRMSContext>();
-    var demoPassword = app.Configuration["Seed:DemoPassword"];
-
-    await DbSeeder.SeedAsync(context, demoPassword);
-}
-
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
