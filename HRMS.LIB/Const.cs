@@ -9,5 +9,6 @@
         public static readonly string HR_ROLE = "HR";
         public static readonly string MANAGER_ROLE = "Manager";
         public static readonly string EMPLOYEE_ROLE = "Employee";
+        public static readonly string[] PROTECTED_ROLES = { ADMIN_ROLE, HR_ROLE, MANAGER_ROLE, EMPLOYEE_ROLE };
     }
 }

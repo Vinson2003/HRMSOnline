@@ -63,11 +63,18 @@ namespace HRMS.Service.Service
             if (string.IsNullOrWhiteSpace(request.RoleName))
             {
                 response.Result = false;
-                response.Message = "Role name cannot be empty.";
+                response.Message = "Role name is required.";
                 return response;
             }
 
             var roleName = request.RoleName.Trim();
+
+            if (roleName.Length > 50)
+            {
+                response.Result = false;
+                response.Message = "Role name cannot exceed 50 characters.";
+                return response;
+            }
 
             // Check if the role name already exists and is not deleted
             var alreadyExists = await _context.MstRoles.AnyAsync(role => !role.IsDeleted && role.RoleName == roleName);
@@ -101,13 +108,19 @@ namespace HRMS.Service.Service
             if (string.IsNullOrWhiteSpace(request.RoleName))
             {
                 response.Result = false;
-                response.Message = "Role name cannot be empty.";
+                response.Message = "Role name is required.";
                 return response;
             }
 
             var roleName = request.RoleName.Trim();
 
-            // Check if the role exists and is not deleted
+            if (roleName.Length > 50)
+            {
+                response.Result = false;
+                response.Message = "Role name cannot exceed 50 characters.";
+                return response;
+            }
+
             var role = await _context.MstRoles.FirstOrDefaultAsync(item => item.Id == request.Id && !item.IsDeleted);
             if (role == null)
             {
@@ -116,7 +129,14 @@ namespace HRMS.Service.Service
                 return response;
             }
 
-            // Check if the new department name already exists for a different department
+            // Prevent deleting default roles and ignore case sensitive
+            if (Const.PROTECTED_ROLES.Contains(role.RoleName, StringComparer.OrdinalIgnoreCase))
+            {
+                response.Result = false;
+                response.Message = "Default roles cannot be modified.";
+                return response;
+            }
+
             var alreadyExists = await _context.MstRoles.AnyAsync(item => item.Id != request.Id &&
                 !item.IsDeleted && item.RoleName == roleName);
 
@@ -148,6 +168,14 @@ namespace HRMS.Service.Service
             {
                 response.Result = true;
                 response.Message = "Role not found";
+                return response;
+            }
+
+            // Prevent deleting default roles and ignore case sensitive
+            if (Const.PROTECTED_ROLES.Contains(role.RoleName, StringComparer.OrdinalIgnoreCase))
+            {
+                response.Result = false;
+                response.Message = "Default roles cannot be deleted.";
                 return response;
             }
 

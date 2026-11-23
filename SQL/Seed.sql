@@ -33,7 +33,7 @@ VALUES (
 IF NOT EXISTS (SELECT 1 FROM Mst_User WHERE Username = 'admin')
 INSERT INTO Mst_User (Username, PasswordHash, EmployeeId, RoleId, IsActive, Created, CreatedBy, IsDeleted)
 VALUES (
-        'admin',
+        'Admin',
         'AQAAAAIAAYagAAAAEIc8FR/7ZKBPx8435BgRpJH2sT959fzJm3K7cMMrdyNsY+skjqskvUYhW5b2rh+2vg==',
         (SELECT Id FROM Mst_Employee WHERE EmployeeNumber = 'EMP-2026-0001'),
         (SELECT Id FROM Mst_Role WHERE RoleName = 'Admin'),
