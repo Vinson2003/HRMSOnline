@@ -76,8 +76,8 @@ namespace HRMS.Service.Service
                 return response;
             }
 
-            // Check if the role name already exists and is not deleted
-            var alreadyExists = await _context.MstRoles.AnyAsync(role => !role.IsDeleted && role.RoleName == roleName);
+            // Check if the role name already exists
+            var alreadyExists = await _context.MstRoles.AnyAsync(role => role.RoleName == roleName);
 
             if (alreadyExists)
             {
@@ -97,7 +97,7 @@ namespace HRMS.Service.Service
             await _context.SaveChangesAsync();
 
             response.Result = true;
-            response.Message = "Role Added Succesfull";
+            response.Message = "Role Added Succesfully";
             return response;
         }
 
@@ -129,7 +129,6 @@ namespace HRMS.Service.Service
                 return response;
             }
 
-            // Prevent deleting default roles and ignore case sensitive
             if (Const.PROTECTED_ROLES.Contains(role.RoleName, StringComparer.OrdinalIgnoreCase))
             {
                 response.Result = false;
@@ -137,8 +136,7 @@ namespace HRMS.Service.Service
                 return response;
             }
 
-            var alreadyExists = await _context.MstRoles.AnyAsync(item => item.Id != request.Id &&
-                !item.IsDeleted && item.RoleName == roleName);
+            var alreadyExists = await _context.MstRoles.AnyAsync(item => item.Id != request.Id && item.RoleName == roleName);
 
             if (alreadyExists)
             {
@@ -166,16 +164,25 @@ namespace HRMS.Service.Service
             var role = await _context.MstRoles.FirstOrDefaultAsync(item => item.Id == id && !item.IsDeleted);
             if (role == null)
             {
-                response.Result = true;
-                response.Message = "Role not found";
+                response.Result = false;
+                response.Message = "Role not found.";
                 return response;
             }
 
-            // Prevent deleting default roles and ignore case sensitive
             if (Const.PROTECTED_ROLES.Contains(role.RoleName, StringComparer.OrdinalIgnoreCase))
             {
                 response.Result = false;
                 response.Message = "Default roles cannot be deleted.";
+                return response;
+            }
+
+            // Check whether the role is being used by users
+            var isRoleInUse = await _context.MstUsers.AnyAsync(user => user.RoleId == id && !user.IsDeleted);
+
+            if (isRoleInUse)
+            {
+                response.Result = false;
+                response.Message = "Cannot delete role because it is currently assigned to one or more users.";
                 return response;
             }
 
