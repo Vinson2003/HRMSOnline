@@ -10,9 +10,10 @@ using System.Linq.Expressions;
 
 namespace HRMS.Service.Service
 {
-    public class EmployeeService(HRMSContext context) : IEmployeeService
+    public class EmployeeService(HRMSContext context, ICurrentUserService currentUser) : IEmployeeService
     {
         private readonly HRMSContext _context = context;
+        private readonly ICurrentUserService _currentUser = currentUser;
 
         private async Task<string> GenerateEmployeeNumberAsync()
         {
@@ -153,6 +154,8 @@ namespace HRMS.Service.Service
                 return response;
             }
 
+            var getUsername = await _currentUser.GetUsernameAsync();
+
             var newEmployee = new MstEmployee
             {
                 EmployeeNumber = await GenerateEmployeeNumberAsync(),
@@ -162,7 +165,7 @@ namespace HRMS.Service.Service
                 ManagerId = request.ManagerId,
                 AnnualLeaveBalance = request.AnnualLeaveBalance,
                 Created = DateTime.UtcNow,
-                CreatedBy = "System"
+                CreatedBy = getUsername
             };
 
             _context.MstEmployees.Add(newEmployee);
@@ -249,7 +252,7 @@ namespace HRMS.Service.Service
             employee.ManagerId = request.ManagerId;
             employee.AnnualLeaveBalance = request.AnnualLeaveBalance;
             employee.Updated = DateTime.UtcNow;
-            employee.UpdatedBy = "System"; 
+            employee.UpdatedBy = await _currentUser.GetUsernameAsync(); 
 
             await _context.SaveChangesAsync();
 
@@ -280,7 +283,7 @@ namespace HRMS.Service.Service
 
             employee.IsDeleted = true;
             employee.Updated = DateTime.UtcNow;
-            employee.UpdatedBy = "System"; 
+            employee.UpdatedBy = await _currentUser.GetUsernameAsync(); 
 
             await _context.SaveChangesAsync();
 

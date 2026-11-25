@@ -11,9 +11,10 @@ using System.Net.NetworkInformation;
 
 namespace HRMS.Service.Service
 {
-    public class DepartmentService(HRMSContext context) : IDepartmentService
+    public class DepartmentService(HRMSContext context, ICurrentUserService currentUser) : IDepartmentService
     {
         private readonly HRMSContext _context = context;
+        private readonly ICurrentUserService _currentUser = currentUser;
 
         public async Task<BaseResponse<List<DepartmentList>>> DepartmentsListAsync(BasePaging paging, string searchName)
         {
@@ -80,11 +81,13 @@ namespace HRMS.Service.Service
                 return response;
             }
 
+            var getUsername = await _currentUser.GetUsernameAsync();
+
             var department = new MstDepartment
             {
                 DepartmentName = departmentName,
                 Created = DateTime.UtcNow,
-                CreatedBy = "System"
+                CreatedBy = getUsername
             };
 
             _context.MstDepartments.Add(department);
@@ -130,7 +133,7 @@ namespace HRMS.Service.Service
 
             department.DepartmentName = departmentName;
             department.Updated = DateTime.UtcNow;
-            department.UpdatedBy = "System"; 
+            department.UpdatedBy = await _currentUser.GetUsernameAsync(); 
 
             await _context.SaveChangesAsync();
 
@@ -144,8 +147,8 @@ namespace HRMS.Service.Service
             var response = new BaseResponse<bool>();
 
             // Check if the department exists and is not deleted
-            var department = await _context.MstDepartments.FirstOrDefaultAsync(item =>
-                item.Id == id && !item.IsDeleted);
+            var department = await _context.MstDepartments.FirstOrDefaultAsync(item => item.Id == id && !item.IsDeleted);
+
             if (department == null)
             {
                 response.Result = true;
@@ -154,8 +157,7 @@ namespace HRMS.Service.Service
             }
 
             // Block deleting a department that still has active employees
-            var hasActiveEmployees = await _context.MstEmployees.AnyAsync(e =>
-                !e.IsDeleted && e.DepartmentId == id);
+            var hasActiveEmployees = await _context.MstEmployees.AnyAsync(e => !e.IsDeleted && e.DepartmentId == id);
 
             if (hasActiveEmployees)
             {
@@ -166,7 +168,7 @@ namespace HRMS.Service.Service
 
             department.IsDeleted = true;
             department.Updated = DateTime.UtcNow;
-            department.UpdatedBy = "System";
+            department.UpdatedBy = await _currentUser.GetUsernameAsync();
 
             await _context.SaveChangesAsync();
 

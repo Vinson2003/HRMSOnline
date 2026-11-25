@@ -9,9 +9,10 @@ using HRMS.Data.Entity;
 
 namespace HRMS.Service.Service
 {
-    public class LeaveTypeService(HRMSContext context) : ILeaveTypeService
+    public class LeaveTypeService(HRMSContext context, ICurrentUserService currentUser) : ILeaveTypeService
     {
         private readonly HRMSContext _context = context;
+        private readonly ICurrentUserService _currentUser = currentUser;
 
         public async Task<BaseResponse<List<LeaveTypeList>>> LeaveTypeListAsync(BasePaging paging)
         {
@@ -85,12 +86,14 @@ namespace HRMS.Service.Service
                 return response;
             }
 
+            var getUsername = await _currentUser.GetUsernameAsync();
+
             var newLeaveType = new MstLeaveType
             {
                 TypeName = typeName,
                 RequiresAttachment = request.RequiresAttachment,
                 Created = DateTime.UtcNow,
-                CreatedBy = "System"
+                CreatedBy = getUsername
             };
 
             _context.MstLeaveTypes.Add(newLeaveType);
@@ -139,7 +142,7 @@ namespace HRMS.Service.Service
             leaveType.TypeName = typeName;
             leaveType.RequiresAttachment = request.RequiresAttachment;
             leaveType.Updated = DateTime.UtcNow;
-            leaveType.UpdatedBy = "System";
+            leaveType.UpdatedBy = await _currentUser.GetUsernameAsync();
 
             await _context.SaveChangesAsync();
 
@@ -171,7 +174,7 @@ namespace HRMS.Service.Service
 
             leaveType.IsDeleted = true;
             leaveType.Updated = DateTime.UtcNow;
-            leaveType.UpdatedBy = "System";
+            leaveType.UpdatedBy = await _currentUser.GetUsernameAsync();
 
             await _context.SaveChangesAsync();
 

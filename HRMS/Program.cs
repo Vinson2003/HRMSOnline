@@ -1,6 +1,7 @@
 using HRMS.Components;
 using HRMS.Data.Context;
 using HRMS.Data.Entity;
+using HRMS.Security;
 using HRMS.Service.Interface;
 using HRMS.Service.Service;
 using Microsoft.AspNetCore.Antiforgery;
@@ -26,6 +27,8 @@ builder.Services.AddScoped<ILeaveTypeService, LeaveTypeService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IRoleService, RoleService>();
+
+builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 
 builder.Services.AddScoped<IPasswordHasher<MstUser>, PasswordHasher<MstUser>>();
 
@@ -99,9 +102,9 @@ app.MapPost("/account/login", async (HttpContext context, IAuthService authServi
     // Create authentication claims.
     var claims = new List<Claim>
     {
-        new(ClaimTypes.NameIdentifier, user.Id.ToString()),
         new(ClaimTypes.Name, user.Username),
-        new("EmployeeId", user.EmployeeId.ToString())
+        new("EmployeeId", user.EmployeeId.ToString()),
+        new(ClaimTypes.NameIdentifier, user.Id.ToString())
     };
 
     if (!string.IsNullOrWhiteSpace(user.RoleName))

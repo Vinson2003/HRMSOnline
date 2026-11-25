@@ -10,10 +10,11 @@ using System.Linq.Expressions;
 
 namespace HRMS.Service.Service
 {
-    public class UserService(HRMSContext context, IPasswordHasher<MstUser> passwordHasher) : IUserService
+    public class UserService(HRMSContext context, IPasswordHasher<MstUser> passwordHasher, ICurrentUserService currentUser) : IUserService
     {
         private readonly HRMSContext _context = context;
         private readonly IPasswordHasher<MstUser> _passwordHasher = passwordHasher;
+        private readonly ICurrentUserService _currentUser = currentUser;
 
         // Is there at least one OTHER active Admin besides this user?
         private async Task<bool> HasOtherActiveAdminAsync(int excludeUserId)
@@ -136,6 +137,8 @@ namespace HRMS.Service.Service
                 return response;
             }
 
+            var getUsername = await _currentUser.GetUsernameAsync();
+
             var newUser = new MstUser
             {
                 Username = username,
@@ -143,7 +146,7 @@ namespace HRMS.Service.Service
                 RoleId = request.RoleId,
                 IsActive = request.IsActive,
                 Created = DateTime.UtcNow,
-                CreatedBy = "System"
+                CreatedBy = getUsername
             };
 
             // Hash the password: the plain password is never stored
@@ -217,7 +220,7 @@ namespace HRMS.Service.Service
             user.RoleId = request.RoleId;
             user.IsActive = request.IsActive;
             user.Updated = DateTime.UtcNow;
-            user.UpdatedBy = "System";
+            user.UpdatedBy = await _currentUser.GetUsernameAsync();
 
             await _context.SaveChangesAsync();
 
@@ -249,7 +252,7 @@ namespace HRMS.Service.Service
 
             user.IsDeleted = true;
             user.Updated = DateTime.UtcNow;
-            user.UpdatedBy = "System";
+            user.UpdatedBy = await _currentUser.GetUsernameAsync();
 
             await _context.SaveChangesAsync();
 
@@ -287,7 +290,7 @@ namespace HRMS.Service.Service
             // Hash the new password and store it on the REAL user
             user.PasswordHash = _passwordHasher.HashPassword(user, request.NewPassword);
             user.Updated = DateTime.UtcNow;
-            user.UpdatedBy = "System";
+            user.UpdatedBy = await _currentUser.GetUsernameAsync();
 
             await _context.SaveChangesAsync();
 

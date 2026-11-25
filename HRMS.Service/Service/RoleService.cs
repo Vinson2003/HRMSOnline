@@ -9,9 +9,10 @@ using System.Linq.Expressions;
 
 namespace HRMS.Service.Service
 {
-    public class RoleService(HRMSContext context) : IRoleService
+    public class RoleService(HRMSContext context, ICurrentUserService currentUser) : IRoleService
     {
         private readonly HRMSContext _context = context;
+        private readonly ICurrentUserService _currentUser = currentUser;
 
         public async Task<BaseResponse<List<RoleList>>> RoleListAsync(BasePaging paging)
         {
@@ -86,11 +87,14 @@ namespace HRMS.Service.Service
                 return response;
             }
 
+            // Get username from login
+            var getUsername = await _currentUser.GetUsernameAsync();
+
             var role = new MstRole
             {
                 RoleName = roleName,
                 Created = DateTime.UtcNow,
-                CreatedBy = "System"
+                CreatedBy = getUsername
             };
 
             _context.MstRoles.Add(role);
@@ -147,7 +151,7 @@ namespace HRMS.Service.Service
 
             role.RoleName = roleName;
             role.Updated = DateTime.UtcNow;
-            role.UpdatedBy = "System";
+            role.UpdatedBy = await _currentUser.GetUsernameAsync();
 
             await _context.SaveChangesAsync();
 
@@ -188,7 +192,7 @@ namespace HRMS.Service.Service
 
             role.IsDeleted = true;
             role.Updated = DateTime.UtcNow;
-            role.UpdatedBy = "System";
+            role.UpdatedBy = await _currentUser.GetUsernameAsync();
 
             await _context.SaveChangesAsync();
 
