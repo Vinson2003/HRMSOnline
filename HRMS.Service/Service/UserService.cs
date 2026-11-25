@@ -174,6 +174,15 @@ namespace HRMS.Service.Service
                 return response;
             }
 
+            var getUserId = await _currentUser.GetUserIdAsync();
+
+            if (request.Id == getUserId && user.IsActive == false || request.RoleId != user.RoleId)
+            {
+                response.Result = false;
+                response.Message = "You cannot deactivate your own account or change your own role.";
+                return response;
+            }
+
             if (string.IsNullOrWhiteSpace(request.Username))
             {
                 response.Result = false;
@@ -239,6 +248,16 @@ namespace HRMS.Service.Service
             {
                 response.Result = false;
                 response.Message = "User not found.";
+                return response;
+            }
+
+            // Get user id from login and check cannot delete own account.
+            var getUserId = await _currentUser.GetUserIdAsync();
+
+            if (userId == getUserId)
+            {
+                response.Result = false;
+                response.Message = "You cannot delete your own account.";
                 return response;
             }
 

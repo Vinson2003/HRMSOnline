@@ -7,6 +7,7 @@
 @using Microsoft.AspNetCore.Authorization
 @rendermode InteractiveServer
 @inject IUserService UserService
+@inject ICurrentUserService CurrentUserService
 @inject IJSRuntime JS
 @attribute [Authorize(Roles = "Admin")]
 
@@ -41,7 +42,7 @@
             @* Always check for null or empty collections before iterating to prevent NullReferenceException rendering errors. *@
             @if (userList != null && userList.Any())
             {
-                @* Generate table rows for each employee in the list *@
+                @* Generate table rows for each user in the list *@
                 @foreach (var (acc, index) in userList.Select((e, i) => (e, i)))
                 {
                     <tr>
@@ -51,9 +52,14 @@
                         <td>@(acc.IsActive ? "Yes" : "No")</td>
                         <td>@acc.Created</td>
                         <td class="text-center">
-                            <button class="btn btn-sm btn-info me-2" @onclick="() => OpenChangePasswordModal(acc)">Change Password</button>
+                            <button class="btn btn-sm btn-info me-2" @onclick="() => OpenChangePasswordModal(acc)">Change Password</button
+
                             <button class="btn btn-sm btn-warning me-2" @onclick="() => OpenEditModal(acc)">Edit</button>
-                            <button class="btn btn-sm btn-danger" @onclick="() => DeleteAccountAsync(acc.Id, acc.Username)">Delete</button> 
+
+                            @if(acc.Id != currentUserId)
+                            {
+                                <button class="btn btn-sm btn-danger" @onclick="() => DeleteAccountAsync(acc.Id, acc.Username)">Delete</button>
+                            }
                         </td>
                     </tr>
                 }
@@ -113,8 +119,11 @@
 
     private ChangePasswordModal passwordModalRef = null!;
 
+    private int? currentUserId;
+
     protected override async Task OnInitializedAsync()
     {
+        currentUserId = await CurrentUserService.GetUserIdAsync();
         await LoadDataAsync();
     }
 
@@ -150,22 +159,33 @@
 
     private async Task DeleteAccountAsync(int id, string? name)
     {
-        var confirmed = await JS.InvokeAsync<bool>("confirm", $"Are you sure you want to delete this account '{name}'?");
-
-        if (!confirmed)
+        try
         {
-            return;
+            var confirmed = await JS.InvokeAsync<bool>("confirm", $"Are you sure you want to delete this account '{name}'?");
+
+            if (!confirmed)
+            {
+                return;
+            }
+
+            var response = await UserService.DeleteUserAsync(id);
+
+            if (response.Result)
+            {
+                await LoadDataAsync();
+                return;
+            }
+
+            await JS.InvokeVoidAsync("alert", response.Message);
         }
-
-        var response = await UserService.DeleteUserAsync(id);
-
-        if (response.Result)
+        catch (JSException ex)
         {
-            await LoadDataAsync();
-            return;
+            Console.WriteLine($"JavaScript Interop Error: {ex.Message}");
         }
-
-        await JS.InvokeVoidAsync("alert", response.Message);
+        catch (TaskCanceledException)
+        {
+            Console.WriteLine("JavaScript Interop operation was canceled.");
+        }
     }
 
     private void OpenChangePasswordModal(UserList user)
@@ -175,7 +195,18 @@
 
     private async Task OnPasswordChangedAsync()
     {
-        await JS.InvokeVoidAsync("alert", "Password changed Successfully");
+        try
+        {
+            await JS.InvokeVoidAsync("alert", "Password changed successfully");
+        }
+        catch (JSException ex)
+        {
+            Console.WriteLine($"JavaScript Interop Error: {ex.Message}");
+        }
+        catch (TaskCanceledException)
+        {
+            Console.WriteLine("JavaScript Interop operation was canceled.");
+        }
     }
 
     private async Task PreviousPageAsync()

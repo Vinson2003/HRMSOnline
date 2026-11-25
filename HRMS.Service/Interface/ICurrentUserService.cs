@@ -6,6 +6,8 @@ namespace HRMS.Service.Interface
 {
     public interface ICurrentUserService
     {
-        Task<string> GetUsernameAsync();
+        Task<string?> GetUsernameAsync();
+
+        Task<int?> GetUserIdAsync();
     }
 }
