@@ -176,7 +176,7 @@ namespace HRMS.Service.Service
 
             var getUserId = await _currentUser.GetUserIdAsync();
 
-            if (request.Id == getUserId && user.IsActive == false || request.RoleId != user.RoleId)
+            if (request.Id == getUserId && (request.IsActive == false || request.RoleId != user.RoleId))
             {
                 response.Result = false;
                 response.Message = "You cannot deactivate your own account or change your own role.";

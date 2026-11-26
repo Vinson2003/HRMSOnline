@@ -30,6 +30,8 @@ builder.Services.AddScoped<IRoleService, RoleService>();
 
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 
+builder.Services.AddScoped<IDialogService, DialogService>();
+
 builder.Services.AddScoped<IPasswordHasher<MstUser>, PasswordHasher<MstUser>>();
 
 // Configure cookie-based authentication and session settings.

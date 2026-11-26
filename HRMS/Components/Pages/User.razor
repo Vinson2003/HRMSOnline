@@ -8,7 +8,7 @@
 @rendermode InteractiveServer
 @inject IUserService UserService
 @inject ICurrentUserService CurrentUserService
-@inject IJSRuntime JS
+@inject IDialogService Dialog
 @attribute [Authorize(Roles = "Admin")]
 
 <PageTitle>User Page</PageTitle>
@@ -159,33 +159,20 @@
 
     private async Task DeleteAccountAsync(int id, string? name)
     {
-        try
+        var confirmed = await Dialog.ConfirmAsync($"Are you sure you want to delete department '{name}'?");
+
+        if (!confirmed)
+            return;
+
+        var response = await UserService.DeleteUserAsync(id);
+
+        if (response.Result)
         {
-            var confirmed = await JS.InvokeAsync<bool>("confirm", $"Are you sure you want to delete this account '{name}'?");
-
-            if (!confirmed)
-            {
-                return;
-            }
-
-            var response = await UserService.DeleteUserAsync(id);
-
-            if (response.Result)
-            {
-                await LoadDataAsync();
-                return;
-            }
-
-            await JS.InvokeVoidAsync("alert", response.Message);
+            await LoadDataAsync();
+            return;
         }
-        catch (JSException ex)
-        {
-            Console.WriteLine($"JavaScript Interop Error: {ex.Message}");
-        }
-        catch (TaskCanceledException)
-        {
-            Console.WriteLine("JavaScript Interop operation was canceled.");
-        }
+
+        await Dialog.AlertAsync(response.Message);
     }
 
     private void OpenChangePasswordModal(UserList user)
@@ -195,18 +182,7 @@
 
     private async Task OnPasswordChangedAsync()
     {
-        try
-        {
-            await JS.InvokeVoidAsync("alert", "Password changed successfully");
-        }
-        catch (JSException ex)
-        {
-            Console.WriteLine($"JavaScript Interop Error: {ex.Message}");
-        }
-        catch (TaskCanceledException)
-        {
-            Console.WriteLine("JavaScript Interop operation was canceled.");
-        }
+        await Dialog.AlertAsync("Password changed successfully");
     }
 
     private async Task PreviousPageAsync()

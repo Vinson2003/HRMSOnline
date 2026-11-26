@@ -7,7 +7,7 @@
 @using Microsoft.AspNetCore.Authorization
 @rendermode InteractiveServer
 @inject IEmployeeService EmployeeService
-@inject IJSRuntime JS
+@inject IDialogService Dialog
 @attribute [Authorize]
 
 <PageTitle>Employee Page</PageTitle>
@@ -18,8 +18,7 @@
     <div class="d-flex justify-content-between align-items-center mb-3 mt-2">
 
         <div class="w-25">
-            <input type="text" class="form-control" placeholder="Search Employee..."
-                   @bind="searchName" @bind:event="oninput" @onkeyup="SearchAsync" />
+            <input type="text" class="form-control" placeholder="Search Employee..." @bind="searchName" @bind:event="oninput" @onkeyup="SearchAsync" />
         </div>
 
         <div>
@@ -154,8 +153,7 @@
 
     private async Task DeleteEmployeeAsync(int id, string? name)
     {
-        var confirmed = await JS.InvokeAsync<bool>(
-            "confirm", $"Are you sure you want to delete employee '{name}'?");
+        var confirmed = await Dialog.ConfirmAsync($"Are you sure you want to delete employee '{name}'?");
 
         if (!confirmed)
         {
@@ -170,7 +168,7 @@
             return;
         }
 
-        await JS.InvokeVoidAsync("alert", response.Message);
+        await Dialog.AlertAsync(response.Message);
     }
 
     private async Task PreviousPageAsync()

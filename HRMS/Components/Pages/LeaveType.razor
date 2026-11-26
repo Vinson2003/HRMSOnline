@@ -7,7 +7,7 @@
 @using Microsoft.AspNetCore.Authorization
 @rendermode InteractiveServer
 @inject ILeaveTypeService LeaveTypeService
-@inject IJSRuntime JS
+@inject IDialogService Dialog
 @attribute [Authorize]
 
 <PageTitle>Leave Type Page</PageTitle>
@@ -141,7 +141,7 @@
 
     private async Task DeleteLeaveTypeAsync(int id)
     {
-        var confirmed = await JS.InvokeAsync<bool>("confirm", $"Are you sure you want to delete this leave type?");
+        var confirmed = await Dialog.ConfirmAsync($"Are you sure you want to delete this leave type?");
         if (!confirmed)
         {
             return;
@@ -154,7 +154,7 @@
             return;
         }
 
-        await JS.InvokeVoidAsync("alert", response.Message);
+        await Dialog.AlertAsync(response.Message);
     }
 
     private async Task PreviousPageAsync()

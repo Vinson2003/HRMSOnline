@@ -7,7 +7,7 @@
 @using Microsoft.AspNetCore.Authorization
 @rendermode InteractiveServer
 @inject IDepartmentService DepartmentService
-@inject IJSRuntime JS
+@inject IDialogService Dialog
 @attribute [Authorize]
 
 <PageTitle>Department Page</PageTitle>
@@ -133,13 +133,10 @@
 
     private async Task DeleteDepartmentAsync(int id, string? name)
     {
-        var confirmed = await JS.InvokeAsync<bool>(
-            "confirm", $"Are you sure you want to delete department '{name}'?");
+        var confirmed = await Dialog.ConfirmAsync($"Are you sure you want to delete department '{name}'?");
 
         if (!confirmed)
-        {
             return;
-        }
 
         var response = await DepartmentService.DeleteDepartmentAsync(id);
 
@@ -149,7 +146,7 @@
             return;
         }
 
-        await JS.InvokeVoidAsync("alert", response.Message);
+        await Dialog.AlertAsync(response.Message);
     }
 
     private async Task PreviousPageAsync()

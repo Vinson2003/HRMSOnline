@@ -7,7 +7,7 @@
 @using Microsoft.AspNetCore.Authorization
 @rendermode InteractiveServer
 @inject IRoleService RoleService
-@inject IJSRuntime JS
+@inject IDialogService Dialog
 @attribute [Authorize(Roles = "Admin")]
 
 <PageTitle>Role Page</PageTitle>
@@ -133,7 +133,7 @@
 
     private async Task DeleteRoleAsync(int id, string? name)
     {
-        var confirmed = await JS.InvokeAsync<bool>("confirm", $"Are you sure want to delete this role '{name}'?");
+        var confirmed = await Dialog.ConfirmAsync($"Are you sure want to delete this role '{name}'?");
 
         if (!confirmed)
         {
@@ -148,7 +148,7 @@
             return;
         }
 
-        await JS.InvokeVoidAsync("alert", response.Message);
+        await Dialog.AlertAsync(response.Message);
     }
 
     private async Task PreviousPageAsync()
