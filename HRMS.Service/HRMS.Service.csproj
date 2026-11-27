@@ -9,6 +9,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Components.Authorization" Version="11.0.0" />
     <PackageReference Include="Microsoft.Extensions.Identity.Core" Version="11.0.0" />
+    <PackageReference Include="Microsoft.JSInterop" Version="11.0.0" />
     <PackageReference Include="System.Security.Cryptography.Pkcs" Version="11.0.0" />
   </ItemGroup>
 

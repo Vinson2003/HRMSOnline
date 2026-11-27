@@ -16,23 +16,25 @@
             </NavLink>
         </div>
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="department">
-                <span class="bi bi-building-fill" aria-hidden="true"></span> Department
-            </NavLink>
-        </div>
+        <AuthorizeView Roles="Admin,HR">
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="department">
+                    <span class="bi bi-building-fill" aria-hidden="true"></span> Department
+                </NavLink>
+            </div>
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="employee">
-                <span class="bi bi-person-vcard" aria-hidden="true"></span> Employee
-            </NavLink>
-        </div>
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="employee">
+                    <span class="bi bi-person-vcard" aria-hidden="true"></span> Employee
+                </NavLink>
+            </div>
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="leavetype">
-                <span class="bi bi-calendar2-week" aria-hidden="true"></span> Leave Type
-            </NavLink>
-        </div>
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="leavetype">
+                    <span class="bi bi-calendar2-week" aria-hidden="true"></span> Leave Type
+                </NavLink>
+            </div>
+        </AuthorizeView>
 
         <AuthorizeView Roles="Admin">
             <div class="nav-item px-3">
