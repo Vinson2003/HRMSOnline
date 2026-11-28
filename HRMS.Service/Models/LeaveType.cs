@@ -12,6 +12,8 @@ namespace HRMS.Service.Models
 
         public bool RequiresAttachment { get; set; }
 
+        public bool DeductsAnnualBalance { get; set; }
+
         public bool IsDeleted { get; set; }
 
         public DateTime? Created { get; set; }
@@ -29,6 +31,8 @@ namespace HRMS.Service.Models
 
         public bool RequiresAttachment { get; set; }
 
+        public bool DeductsAnnualBalance { get; set; }
+
         public DateTime Created { get; set; }
 
         public string? CreatedBy { get; set; }
@@ -41,6 +45,8 @@ namespace HRMS.Service.Models
         public string TypeName { get; set; } = null!;
 
         public bool RequiresAttachment { get; set; }
+
+        public bool DeductsAnnualBalance { get; set; }
 
         public DateTime Updated { get; set; }
 

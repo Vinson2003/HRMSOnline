@@ -32,6 +32,10 @@
                         <input class="form-check-input" type="checkbox" id="requiresAttachment" @bind="requiresAttachment" />
                         <label class="form-check-label" for="requiresAttachment">Requires attachment</label>
                     </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="deductsAnnualBalance" @bind="deductsAnnualBalance" />
+                        <label class="form-check-label" for="deductsAnnualBalance">Deducts Annual Balance</label>
+                    </div>
                 </div>
             </div>
 
@@ -54,6 +58,7 @@
     private int currentId;
     private string typeName = string.Empty;
     private bool requiresAttachment;
+    private bool deductsAnnualBalance;
 
     public void CloseModal()
     {
@@ -67,6 +72,7 @@
         currentId = data?.Id ?? 0;
         typeName = data?.TypeName ?? string.Empty;
         requiresAttachment = data?.RequiresAttachment ?? false;
+        deductsAnnualBalance = data?.DeductsAnnualBalance ?? false;
 
         modalTitle = data is null ? "Add Leave Type" : "Edit Leave Type";
         errorMessage = string.Empty;
@@ -93,12 +99,14 @@
             {
                 TypeName = typeName,
                 RequiresAttachment = requiresAttachment,
+                DeductsAnnualBalance = deductsAnnualBalance
             })
             : await LeaveTypeService.UpdateLeaveTypeAsync(new UpdateLeaveType
             {
                 Id = currentId,
                 TypeName = typeName,
                 RequiresAttachment = requiresAttachment,
+                DeductsAnnualBalance = deductsAnnualBalance
             });
 
         if (!response.Result)

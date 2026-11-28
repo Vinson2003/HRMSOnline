@@ -13,6 +13,7 @@ CREATE TABLE Mst_LeaveType (
     TypeName VARCHAR(50) NOT NULL,
     RequiresAttachment BIT NOT NULL DEFAULT 0,
     IsDeleted BIT NOT NULL DEFAULT 0,
+    DeductsAnnualBalance BIT NOT NULL DEFAULT 0,
     Created DATETIME Null,
     CreatedBy NVARCHAR(100) NULL,
     Updated DATETIME NULL,
@@ -31,7 +32,7 @@ CREATE TABLE Mst_Employee (
     Created DATETIME NULL,
     CreatedBy NVARCHAR(100) NULL,
     Updated DATETIME NULL,
-    UpdatedBy NVARCHAR(100) NULL
+    UpdatedBy NVARCHAR(100) NULL,
     
     CONSTRAINT FK_Employee_Department FOREIGN KEY (DepartmentId) 
         REFERENCES Mst_Department(Id),
@@ -54,7 +55,7 @@ CREATE TABLE Trx_LeaveRequest (
     Created DATETIME NULL,
     CreatedBy NVARCHAR(100) NULL,
     Updated DATETIME NULL,
-    UpdatedBy NVARCHAR(100) NULL
+    UpdatedBy NVARCHAR(100) NULL,
     
     CONSTRAINT FK_LeaveRequest_Employee FOREIGN KEY (EmployeeId) 
         REFERENCES Mst_Employee(Id),
@@ -72,7 +73,7 @@ CREATE TABLE Trx_LeaveApproval (
     Created DATETIME NULL,
     CreatedBy NVARCHAR(100) NULL,
     Updated DATETIME NULL,
-    UpdatedBy NVARCHAR(100) NULL
+    UpdatedBy NVARCHAR(100) NULL,
     
     CONSTRAINT FK_LeaveApproval_LeaveRequest FOREIGN KEY (LeaveRequestId) 
         REFERENCES Trx_LeaveRequest(Id),

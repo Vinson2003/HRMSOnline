@@ -24,6 +24,7 @@ namespace HRMS.Service.Service
                     Id = leaveType.Id,
                     TypeName = leaveType.TypeName,
                     RequiresAttachment = leaveType.RequiresAttachment,
+                    DeductsAnnualBalance = leaveType.DeductsAnnualBalance,
                     Created = leaveType.Created,
                     CreatedBy = leaveType.CreatedBy
                 });
@@ -33,6 +34,7 @@ namespace HRMS.Service.Service
                 ["Id"] = leaveType => leaveType.Id,
                 ["TypeName"] = leaveType => leaveType.TypeName,
                 ["RequiresAttachment"] = leaveType => leaveType.RequiresAttachment,
+                ["DeductAnnualBalance"] = leaveType => leaveType.DeductsAnnualBalance,
                 ["Created"] = leaveType => leaveType.Created,
                 ["CreatedBy"] = leaveType => leaveType.CreatedBy
             };
@@ -92,6 +94,7 @@ namespace HRMS.Service.Service
             {
                 TypeName = typeName,
                 RequiresAttachment = request.RequiresAttachment,
+                DeductsAnnualBalance = request.DeductsAnnualBalance,
                 Created = DateTime.UtcNow,
                 CreatedBy = getUsername
             };
@@ -141,6 +144,7 @@ namespace HRMS.Service.Service
 
             leaveType.TypeName = typeName;
             leaveType.RequiresAttachment = request.RequiresAttachment;
+            leaveType.DeductsAnnualBalance = request.DeductsAnnualBalance;
             leaveType.Updated = DateTime.UtcNow;
             leaveType.UpdatedBy = await _currentUser.GetUsernameAsync();
 

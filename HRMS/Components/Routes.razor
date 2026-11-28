@@ -4,14 +4,20 @@
         <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)">
 
             <NotAuthorized>
-                <h3>Access Denied</h3>
-                <p>You need to login to access this page.</p>
-                <a href="/login">Go to Login</a>
+                @if (context.User.Identity?.IsAuthenticated == true)
+                {
+                    <RedirectTo Url="/access-denied" />
+                }
+                else
+                {
+                    <RedirectTo Url="/login" />
+                }
             </NotAuthorized>
 
             <Authorizing>
                 <p>Checking authorization...</p>
             </Authorizing>
+
         </AuthorizeRouteView>
 
         <FocusOnNavigate RouteData="routeData" Selector="h1" />

@@ -33,6 +33,7 @@
                 <th>No</th>
                 <th>Type Name</th>
                 <th>Requires Attachment</th>
+                <th>Deducts Annual Balance</th>
                 <th>Created</th>
                 <th class="text-center w-25">Action</th>
             </tr>
@@ -48,6 +49,7 @@
                         <td>@(paging.Start + index + 1)</td>
                         <td>@data.TypeName</td>
                         <td>@(data.RequiresAttachment ? "Yes" : "No")</td>
+                        <td>@(data.DeductsAnnualBalance ? "Yes" : "No")</td>
                         <td>@data.Created</td>
                         <td class="text-center">
                             <button class="btn btn-sm btn-warning me-2" @onclick="() => OpenEditModal(data)">Edit</button>
@@ -59,7 +61,7 @@
             else
             {
                 <tr>
-                    <td colspan="5" class="text-center">Data not found....</td>
+                    <td colspan="6" class="text-center">Data not found....</td>
                 </tr>
             }
         </tbody>

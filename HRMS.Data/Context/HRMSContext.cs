@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using HRMS.Data.Entity;
 using Microsoft.EntityFrameworkCore;
@@ -30,7 +30,7 @@ public partial class HRMSContext : DbContext
     {
         modelBuilder.Entity<MstDepartment>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Mst_Depa__3214EC070A0446BD");
+            entity.HasKey(e => e.Id).HasName("PK__Mst_Depa__3214EC07D1C29FDE");
 
             entity.ToTable("Mst_Department");
 
@@ -45,11 +45,11 @@ public partial class HRMSContext : DbContext
 
         modelBuilder.Entity<MstEmployee>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Mst_Empl__3214EC07EE0897DA");
+            entity.HasKey(e => e.Id).HasName("PK__Mst_Empl__3214EC074C803FF3");
 
             entity.ToTable("Mst_Employee");
 
-            entity.HasIndex(e => e.EmployeeNumber, "UQ__Mst_Empl__8D6635982D11A7C4").IsUnique();
+            entity.HasIndex(e => e.EmployeeNumber, "UQ__Mst_Empl__8D6635980B5E1CDF").IsUnique();
 
             entity.Property(e => e.AnnualLeaveBalance).HasDefaultValue(12);
             entity.Property(e => e.Created).HasColumnType("datetime");
@@ -78,7 +78,7 @@ public partial class HRMSContext : DbContext
 
         modelBuilder.Entity<MstLeaveType>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Mst_Leav__3214EC0786DE11E4");
+            entity.HasKey(e => e.Id).HasName("PK__Mst_Leav__3214EC075A09BDD8");
 
             entity.ToTable("Mst_LeaveType");
 
@@ -93,11 +93,11 @@ public partial class HRMSContext : DbContext
 
         modelBuilder.Entity<MstRole>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Mst_Role__3214EC0722F67453");
+            entity.HasKey(e => e.Id).HasName("PK__Mst_Role__3214EC07056F068A");
 
             entity.ToTable("Mst_Role");
 
-            entity.HasIndex(e => e.RoleName, "UQ__Mst_Role__8A2B61605B36DCFF").IsUnique();
+            entity.HasIndex(e => e.RoleName, "UQ__Mst_Role__8A2B61608AE12EF6").IsUnique();
 
             entity.Property(e => e.Created).HasColumnType("datetime");
             entity.Property(e => e.CreatedBy).HasMaxLength(100);
@@ -108,13 +108,13 @@ public partial class HRMSContext : DbContext
 
         modelBuilder.Entity<MstUser>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Mst_User__3214EC07FA5502CD");
+            entity.HasKey(e => e.Id).HasName("PK__Mst_User__3214EC0784F0B64A");
 
             entity.ToTable("Mst_User");
 
-            entity.HasIndex(e => e.Username, "UQ__Mst_User__536C85E404FDF020").IsUnique();
+            entity.HasIndex(e => e.Username, "UQ__Mst_User__536C85E4352F0FF9").IsUnique();
 
-            entity.HasIndex(e => e.EmployeeId, "UQ__Mst_User__7AD04F10222758D8").IsUnique();
+            entity.HasIndex(e => e.EmployeeId, "UQ__Mst_User__7AD04F10F06496B2").IsUnique();
 
             entity.Property(e => e.Created).HasColumnType("datetime");
             entity.Property(e => e.CreatedBy).HasMaxLength(100);
@@ -137,7 +137,7 @@ public partial class HRMSContext : DbContext
 
         modelBuilder.Entity<TrxLeaveApproval>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Trx_Leav__3214EC079C1F63CA");
+            entity.HasKey(e => e.Id).HasName("PK__Trx_Leav__3214EC0751BCD36F");
 
             entity.ToTable("Trx_LeaveApproval");
 
@@ -168,7 +168,7 @@ public partial class HRMSContext : DbContext
 
         modelBuilder.Entity<TrxLeaveRequest>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Trx_Leav__3214EC07FACF2F89");
+            entity.HasKey(e => e.Id).HasName("PK__Trx_Leav__3214EC07543A2167");
 
             entity.ToTable("Trx_LeaveRequest");
 

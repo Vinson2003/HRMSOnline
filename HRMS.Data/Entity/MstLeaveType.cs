@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace HRMS.Data.Entity;
@@ -20,6 +20,8 @@ public partial class MstLeaveType
     public DateTime? Updated { get; set; }
 
     public string? UpdatedBy { get; set; }
+
+    public bool DeductsAnnualBalance { get; set; }
 
     public virtual ICollection<TrxLeaveRequest> TrxLeaveRequests { get; set; } = new List<TrxLeaveRequest>();
 }
